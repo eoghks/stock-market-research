@@ -67,6 +67,24 @@ const kr_top10      = raw.kr_top10      || [];
 const us_top10      = raw.us_top10      || [];
 const co_summary    = raw.company_overall_summary || '';
 
+// ── 디자인 토큰 ──────────────────────────────────────────────────────────────
+const COLORS = {
+  primary:     '1F4E79',  // 진파랑 — 헤더, 주색상
+  rise:        'C00000',  // 빨강 — 상승
+  fall:        '1F4E79',  // 파랑 — 하락
+  neutral:     '595959',  // 회색 — 보조 텍스트
+  text:        '1A1A1A',  // 거의 검정 — 본문
+  bg_stripe:   'F2F7FF',  // 연청 — 짝수 행 배경
+  bg_white:    'FFFFFF',  // 흰색
+  info_bg:     'FFFBF0',  // 노란 — infoBox 배경
+  info_border: 'F0B429',  // 주황 — infoBox 테두리
+  card_news:   'EFF5FF',  // 회청 — 카드 뉴스 열
+  card_mean:   'F0FFF4',  // 연초 — 카드 의미 열
+  cover_kpi:   'E8F0FE',  // 연청 — 표지 KPI 카드 배경
+  summary_bg:  'F7F9FC',  // 아주 연한 회청 — 섹션 요약 박스
+  summary_bdr: '90B4D6',  // 중간 파랑 — 요약 박스 테두리
+};
+
 // ── 공통 스타일 헬퍼 ─────────────────────────────────────────────────────────
 const FULL_WIDTH = 9360;
 const bdr  = { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
@@ -75,34 +93,58 @@ const bdrs = { top: bdr, bottom: bdr, left: bdr, right: bdr };
 function hCell(text, w) {
   return new TableCell({
     borders: bdrs, width: { size: w, type: WidthType.DXA },
-    shading: { fill: '1F4E79', type: ShadingType.CLEAR },
-    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    shading: { fill: COLORS.primary, type: ShadingType.CLEAR },
+    margins: { top: 100, bottom: 100, left: 160, right: 160 },
     verticalAlign: VerticalAlign.CENTER,
     children: [new Paragraph({ alignment: AlignmentType.CENTER,
       children: [new TextRun({ text, bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
   });
 }
 
-function dCell(text, w, { bold=false, color='000000', align=AlignmentType.CENTER, bg='FFFFFF' }={}) {
-  return new TableCell({
-    borders: bdrs, width: { size: w, type: WidthType.DXA },
-    shading: { fill: bg, type: ShadingType.CLEAR },
-    margins: { top: 80, bottom: 80, left: 120, right: 120 },
-    verticalAlign: VerticalAlign.CENTER,
-    children: [new Paragraph({ alignment: align,
-      children: [new TextRun({ text: String(text), bold, color, size: 19, font: 'Arial' })] })]
-  });
-}
-
-function multiCell(lines, w, bg='FFFFFF') {
+function dCell(text, w, { bold=false, color=COLORS.text, align=AlignmentType.CENTER, bg=COLORS.bg_white }={}) {
   return new TableCell({
     borders: bdrs, width: { size: w, type: WidthType.DXA },
     shading: { fill: bg, type: ShadingType.CLEAR },
     margins: { top: 100, bottom: 100, left: 160, right: 160 },
+    verticalAlign: VerticalAlign.CENTER,
+    children: [new Paragraph({ alignment: align,
+      children: [new TextRun({ text: String(text), bold, color, size: 20, font: 'Arial' })] })]
+  });
+}
+
+function multiCell(lines, w, bg=COLORS.bg_white) {
+  return new TableCell({
+    borders: bdrs, width: { size: w, type: WidthType.DXA },
+    shading: { fill: bg, type: ShadingType.CLEAR },
+    margins: { top: 120, bottom: 120, left: 180, right: 180 },
     verticalAlign: VerticalAlign.TOP,
-    children: lines.map(({ text, bold=false, size=18, color='333333' }) =>
-      new Paragraph({ spacing: { before: 40, after: 40 },
+    children: lines.map(({ text, bold=false, size=19, color=COLORS.text }) =>
+      new Paragraph({ spacing: { before: 50, after: 50 },
         children: [new TextRun({ text, bold, size, color, font: 'Arial' })] }))
+  });
+}
+
+// 섹션 한 줄 요약 박스
+function sectionSummary(text) {
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: [FULL_WIDTH],
+    rows: [new TableRow({ children: [new TableCell({
+      borders: {
+        top:    { style: BorderStyle.SINGLE, size: 3, color: COLORS.summary_bdr },
+        bottom: { style: BorderStyle.SINGLE, size: 3, color: COLORS.summary_bdr },
+        left:   { style: BorderStyle.SINGLE, size: 14, color: COLORS.primary },
+        right:  { style: BorderStyle.SINGLE, size: 3, color: COLORS.summary_bdr },
+      },
+      width: { size: FULL_WIDTH, type: WidthType.DXA },
+      shading: { fill: COLORS.summary_bg, type: ShadingType.CLEAR },
+      margins: { top: 120, bottom: 120, left: 260, right: 260 },
+      children: [new Paragraph({
+        children: [
+          new TextRun({ text: '📋 ', size: 20, font: 'Arial' }),
+          new TextRun({ text, size: 20, font: 'Arial', color: COLORS.primary, bold: true }),
+        ]
+      })]
+    })]})],
   });
 }
 
@@ -512,11 +554,11 @@ const doc = new Document({
     default: { document: { run: { font: 'Arial', size: 20 } } },
     paragraphStyles: [
       { id:'Heading1', name:'Heading 1', basedOn:'Normal', next:'Normal', quickFormat:true,
-        run:{ size:36, bold:true, font:'Arial', color:'1F4E79' },
-        paragraph:{ spacing:{ before:360, after:240 }, outlineLevel:0 } },
+        run:{ size:40, bold:true, font:'Arial', color:COLORS.primary },
+        paragraph:{ spacing:{ before:480, after:200, line:360, lineRule:'auto' }, outlineLevel:0 } },
       { id:'Heading2', name:'Heading 2', basedOn:'Normal', next:'Normal', quickFormat:true,
-        run:{ size:28, bold:true, font:'Arial', color:'1F4E79' },
-        paragraph:{ spacing:{ before:280, after:160 }, outlineLevel:1 } },
+        run:{ size:30, bold:true, font:'Arial', color:COLORS.primary },
+        paragraph:{ spacing:{ before:320, after:140, line:340, lineRule:'auto' }, outlineLevel:1 } },
     ]
   },
   numbering: { config: [{ reference:'bullets', levels:[{
@@ -545,23 +587,49 @@ const doc = new Document({
     })]})},
     children:[
       // ── 표지 ──────────────────────────────────────────────────────────────
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:480, after:120 },
-        children:[new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:56, font:'Arial', color:'1F4E79' })] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:80 },
-        children:[new TextRun({ text:'Korea & US Stock Market Research Report', size:26, font:'Arial', color:'595959' })] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:80 },
-        children:[new TextRun({ text:`${REPORT_DATE}  |  장마감 기준: ${BASE_DATE}`, size:22, font:'Arial', color:'595959' })] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:80 },
-        children:[new TextRun({ text:`출처: ${SOURCES}`, size:20, font:'Arial', color:'7F7F7F' })] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:60, after:80 },
-        children:[new TextRun({ text:NAVER_OK ? '✅ 네이버 금융 MCP 교차 검증 완료' : '📡 한국경제신문·매일경제 크롤링 데이터 기준',
+      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:560, after:100 },
+        children:[new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:64, font:'Arial', color:COLORS.primary })] }),
+      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
+        children:[new TextRun({ text:'Korea & US Stock Market Research Report', size:26, font:'Arial', color:COLORS.neutral })] }),
+      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
+        children:[new TextRun({ text:`${REPORT_DATE}  |  장마감 기준: ${BASE_DATE}`, size:24, font:'Arial', color:COLORS.neutral, bold:true })] }),
+      sp(120),
+      // KPI 미니 카드 3개 (코스피 · S&P500 · USD/KRW)
+      (() => {
+        const kospi  = kr_indices.find(r => r.name && r.name.includes('코스피')) || {};
+        const sp500  = us_indices.find(r => r.name && (r.name.includes('S&P') || r.name.includes('S&amp;P'))) || {};
+        const usdkrw = fx_rates.find(r => r.pair === 'USD/KRW') || {};
+        function kpiCell(label, val, chg, w) {
+          const isRise = String(chg).startsWith('+') || String(chg).startsWith('▲');
+          const isFall = String(chg).startsWith('-') || String(chg).startsWith('▼');
+          const chgColor = isRise ? COLORS.rise : isFall ? COLORS.fall : COLORS.neutral;
+          return new TableCell({
+            width:{ size:w, type:WidthType.DXA },
+            borders:{ top:{style:BorderStyle.SINGLE,size:6,color:COLORS.primary}, bottom:{style:BorderStyle.SINGLE,size:6,color:COLORS.primary}, left:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC'}, right:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC'} },
+            shading:{ fill:COLORS.cover_kpi, type:ShadingType.CLEAR },
+            margins:{ top:160, bottom:160, left:200, right:200 },
+            children:[
+              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:40}, children:[new TextRun({text:label, size:18, font:'Arial', color:COLORS.neutral})] }),
+              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:40}, children:[new TextRun({text:val||'-', size:28, font:'Arial', color:COLORS.primary, bold:true})] }),
+              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:0},  children:[new TextRun({text:chg||'', size:20, font:'Arial', color:chgColor, bold:true})] }),
+            ]
+          });
+        }
+        const W = Math.floor(FULL_WIDTH/3);
+        return new Table({ width:{size:FULL_WIDTH,type:WidthType.DXA}, columnWidths:[W,W,FULL_WIDTH-W*2],
+          rows:[new TableRow({ children:[
+            kpiCell('🇰🇷 코스피', kospi.value,  kospi.change_pct,  W),
+            kpiCell('🇺🇸 S&P 500', sp500.value,  sp500.change_pct,  W),
+            kpiCell('💱 USD/KRW', usdkrw.rate, usdkrw.change_pct, FULL_WIDTH-W*2),
+          ]})]
+        });
+      })(),
+      sp(200),
+      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
+        children:[new TextRun({ text:NAVER_OK ? '✅ 네이버 금융 MCP 교차 검증 완료' : '📡 한국경제신문 크롤링 데이터 기준',
           size:18, font:'Arial', color: NAVER_OK?'2E7D32':'2E75B6', italics:true })] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:80 },
-        children:[new TextRun({ text:'※ 환율·거시경제 지표에는 초보자용 쉬운 설명이 포함되어 있습니다.',
-          size:18, font:'Arial', color:'2E75B6', italics:true })] }),
-      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:400 },
-        children:[new TextRun({ text:'※ 한국·미국 시총 10위 기업의 주요 뉴스 및 종합 분석이 포함되어 있습니다.',
-          size:18, font:'Arial', color:'7B4F00', italics:true })] }),
+      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:300 },
+        children:[new TextRun({ text:`출처: ${SOURCES}`, size:18, font:'Arial', color:'7F7F7F' })] }),
       divider(),
 
       // ── 목차 ──────────────────────────────────────────────────────────────
@@ -571,8 +639,14 @@ const doc = new Document({
 
       // ── 1. 한국 증시 ───────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('1. 한국 증시')] }),
-      body(`조사일: ${BASE_DATE}  |  출처: ${SOURCES}`, { color:'595959' }),
-      sp(200),
+      sectionSummary((() => {
+        const kospi  = kr_indices.find(r=>r.name&&r.name.includes('코스피'));
+        const kosdaq = kr_indices.find(r=>r.name&&r.name.includes('코스닥'));
+        const k = kospi  ? `코스피 ${kospi.value}(${kospi.change_pct})` : '코스피 -';
+        const d = kosdaq ? `코스닥 ${kosdaq.value}(${kosdaq.change_pct})` : '코스닥 -';
+        return `${k}  |  ${d}  |  조사일: ${BASE_DATE}`;
+      })()),
+      sp(120),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-1. 주요 지수 현황')] }),
       indexTable(kr_indices, [3120,2080,2080,2080]),
       sp(200),
@@ -590,8 +664,14 @@ const doc = new Document({
 
       // ── 2. 미국 증시 ───────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('2. 미국 증시')] }),
-      body(`조사일: ${BASE_DATE}  |  출처: ${SOURCES}`, { color:'595959' }),
-      sp(200),
+      sectionSummary((() => {
+        const dow  = us_indices.find(r=>r.name&&r.name.includes('다우'));
+        const sp5  = us_indices.find(r=>r.name&&(r.name.includes('S&P')||r.name.includes('S&amp;P')));
+        const nas  = us_indices.find(r=>r.name&&r.name.includes('나스닥'));
+        const parts = [dow,sp5,nas].filter(Boolean).map(r=>`${r.name} ${r.value}(${r.change_pct})`);
+        return parts.length ? parts.join('  |  ') : `조사일: ${BASE_DATE}`;
+      })()),
+      sp(120),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('2-1. 주요 지수 현황')] }),
       indexTable(us_indices, [3120,2080,2080,2080]),
       sp(200),
@@ -601,15 +681,20 @@ const doc = new Document({
 
       // ── 3. 글로벌 지수 ─────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('3. 글로벌 주요 지수')] }),
-      body(`조사일: ${BASE_DATE}  |  출처: ${SOURCES}`, { color:'595959' }),
+      sectionSummary(`아시아·유럽 주요 증시 현황  |  ${global_idx.length}개 지수  |  조사일: ${BASE_DATE}`),
       sp(120),
       indexTable(global_idx, [3120,2080,2080,2080]),
       new Paragraph({ children:[new PageBreak()] }),
 
       // ── 4. 환율 ───────────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('4. 환율 현황')] }),
-      body(`조사일: ${REPORT_DATE}  |  출처: ${SOURCES}`, { color:'595959' }),
-      sp(200),
+      sectionSummary((() => {
+        const usd = fx_rates.find(r=>r.pair==='USD/KRW');
+        return usd
+          ? `달러/원 ${usd.rate}원 (${usd.change_pct})  |  ${fx_rates.length}개 통화쌍  |  조사일: ${REPORT_DATE}`
+          : `주요 환율 ${fx_rates.length}개 통화쌍  |  조사일: ${REPORT_DATE}`;
+      })()),
+      sp(160),
       infoBox('환율이란 무엇인가요?',
         '환율이란 서로 다른 나라의 돈을 교환할 때의 비율입니다. 예를 들어 원/달러 환율이 1,467원이라면 미국 돈 1달러를 사려면 한국 돈 1,467원이 필요하다는 뜻입니다. 환율이 오르면 원화 가치가 떨어진(약해진) 것이고, 내리면 원화 가치가 올라간(강해진) 것입니다. 원화 가치가 떨어지면 수입 물가가 올라 소비자 부담이 커집니다.'),
       sp(160),
