@@ -1,0 +1,150 @@
+{
+  "status": "collected",
+  "source": "hankyung+mk",
+  "collected_at": "2026-04-19T10:30:00+09:00",
+  "base_date": "2026년 04월 18일(금)",
+  "naver_verified": false,
+  "kr_indices": [
+    {"name": "코스피", "value": "2,590.48", "change": "▼ 23.10", "change_pct": "-0.88%"},
+    {"name": "코스닥", "value": "730.12",   "change": "▲ 4.21",  "change_pct": "+0.58%"}
+  ],
+  "kospi_detail": {
+    "trading_volume": "512,340 천주",
+    "trading_value": "18조 4,200억원",
+    "open": "2,610.20",
+    "low": "2,582.50",
+    "foreign_net": "-8,320억원",
+    "high_52w": "2,850.00",
+    "low_52w": "2,200.00",
+    "listed_stocks": "5,480"
+  },
+  "kospi_returns": [
+    {"period": "3개월",  "return_pct": "+8.50%"},
+    {"period": "6개월",  "return_pct": "+15.30%"},
+    {"period": "12개월", "return_pct": "+18.70%"}
+  ],
+  "us_indices": [
+    {"name": "다우존스 (DJIA)", "value": "38,460.92", "change": "▲ 210.50", "change_pct": "+0.55%"},
+    {"name": "S&P 500",         "value": "5,204.34",  "change": "▲ 40.20",  "change_pct": "+0.78%"},
+    {"name": "나스닥 (NASDAQ)", "value": "16,340.80", "change": "▲ 198.60", "change_pct": "+1.23%"},
+    {"name": "나스닥 100",      "value": "18,120.44", "change": "▲ 220.10", "change_pct": "+1.23%"},
+    {"name": "반도체 지수(SOX)","value": "4,980.20",  "change": "▲ 120.40", "change_pct": "+2.48%"}
+  ],
+  "global_indices": [
+    {"name": "일본 닛케이 225", "value": "38,200.10", "change": "▼ 310.40", "change_pct": "-0.81%"},
+    {"name": "중국 상해종합",   "value": "3,050.30",  "change": "▼ 12.50",  "change_pct": "-0.41%"},
+    {"name": "홍콩 항셍",       "value": "17,280.50", "change": "▼ 95.10",  "change_pct": "-0.55%"},
+    {"name": "독일 DAX",        "value": "18,100.80", "change": "▲ 220.30", "change_pct": "+1.23%"}
+  ],
+  "fx_rates": [
+    {"pair": "USD/KRW", "rate": "1,372.50", "change": "+5.30", "change_pct": "+0.39%"},
+    {"pair": "JPY/KRW", "rate": "910.20",   "change": "+1.10", "change_pct": "+0.12%"},
+    {"pair": "CNY/KRW", "rate": "190.40",   "change": "+0.80", "change_pct": "+0.42%"},
+    {"pair": "EUR/KRW", "rate": "1,480.60", "change": "+3.20", "change_pct": "+0.22%"},
+    {"pair": "HKD/KRW", "rate": "175.80",   "change": "+0.60", "change_pct": "+0.34%"}
+  ],
+  "macro": [
+    {"name": "소비자물가지수(CPI)",     "value": "113.60", "period": "2026.03"},
+    {"name": "경제성장률(GDP, 실질)",   "value": "1.80%",  "period": "전년 대비"},
+    {"name": "실업률",                 "value": "3.10%",  "period": "2026.03"},
+    {"name": "경상수지",               "value": "18,400억원", "period": "2026.02"}
+  ],
+  "kr_news": ["코스피 외국인 순매도 8,320억… 환율 불안 지속", "바이오·2차전지 강세로 코스닥 나홀로 상승"],
+  "us_news": ["나스닥 엔비디아 주도 1%대 상승", "달러 강세에 신흥국 환율 압박 확대"],
+  "kr_top10": [
+    {
+      "rank": 1, "name": "삼성전자", "ticker": "005930", "sector": "반도체·전자",
+      "price": "74,200", "change_pct": "-0.94%", "market_cap": "약 443조원",
+      "news": [
+        "삼성전자, HBM4 양산 일정 앞당겨 하반기 출하 목표",
+        "삼성전자 1분기 영업이익 6.6조… 반도체 회복세 뚜렷",
+        "삼성전자, 엔비디아 HBM 공급 최종 승인 임박 보도"
+      ],
+      "news_summary": "삼성전자는 HBM4 조기 양산과 엔비디아 납품 승인 기대감으로 긍정적 모멘텀이 형성되고 있습니다. 1분기 실적이 반도체 부문 회복을 확인시켜 줘 하반기 실적 개선 기대가 높아지고 있습니다."
+    },
+    {
+      "rank": 2, "name": "SK하이닉스", "ticker": "000660", "sector": "반도체",
+      "price": "210,500", "change_pct": "+1.45%", "market_cap": "약 153조원",
+      "news": [
+        "SK하이닉스 HBM3E 12단 엔비디아 독점 공급 체제 강화",
+        "SK하이닉스, 1분기 영업이익 7.4조… 사상 최대 분기 실적"
+      ],
+      "news_summary": "SK하이닉스는 AI 반도체 핵심 부품인 HBM3E에서 시장 지배력을 강화하며 사상 최대 분기 실적을 달성했습니다. 엔비디아 의존도가 높아 AI 수요 지속 여부가 핵심 변수입니다."
+    },
+    {
+      "rank": 3, "name": "LG에너지솔루션", "ticker": "373220", "sector": "2차전지",
+      "price": "318,000", "change_pct": "-1.20%", "market_cap": "약 74조원",
+      "news": [
+        "LG엔솔, GM과 배터리 셀 추가 공급 계약 체결",
+        "전기차 수요 둔화로 LG엔솔 2026년 목표 하향 조정"
+      ],
+      "news_summary": "LG에너지솔루션은 GM과의 공급 계약 확대로 중장기 물량을 확보했지만, 전기차 수요 둔화 우려로 단기 목표치를 낮춰 주가에 혼조세를 보이고 있습니다."
+    },
+    {
+      "rank": 4, "name": "현대차", "ticker": "005380", "sector": "자동차",
+      "price": "248,000", "change_pct": "+0.81%", "market_cap": "약 53조원",
+      "news": [
+        "현대차, 미국 관세 대응 조지아 공장 생산 확대",
+        "현대차 1분기 글로벌 판매 5.2% 증가… 하이브리드 견인"
+      ],
+      "news_summary": "현대차는 미국 관세 대응을 위해 현지 생산을 늘리며 리스크를 줄이고 있습니다. 하이브리드 차량이 판매를 이끌며 실적이 견조하게 유지되고 있습니다."
+    },
+    {
+      "rank": 5, "name": "삼성바이오로직스", "ticker": "207940", "sector": "바이오",
+      "price": "975,000", "change_pct": "+2.30%", "market_cap": "약 70조원",
+      "news": [
+        "삼성바이오, 글로벌 빅파마와 1.2조원 규모 CMO 계약",
+        "삼성바이오 4공장 완전 가동… 생산 역량 세계 최대"
+      ],
+      "news_summary": "삼성바이오로직스는 대형 CMO 계약과 4공장 완전 가동으로 바이오의약품 위탁생산 시장에서 입지를 공고히 하고 있습니다. 글로벌 빅파마 수요 확대가 실적을 뒷받침합니다."
+    }
+  ],
+  "us_top10": [
+    {
+      "rank": 1, "name": "Apple", "symbol": "AAPL", "sector": "Technology",
+      "price": "$198.40", "change_pct": "+0.62%", "market_cap": "$3.04T",
+      "news": [
+        "Apple, AI 기능 강화 아이폰 17 시리즈 9월 출시 예정",
+        "Apple, 인도 제조 비중 확대로 중국 공급망 리스크 분산"
+      ],
+      "news_summary": "애플은 AI 기능이 탑재된 아이폰 17 출시와 인도 생산 확대로 긍정적인 흐름을 보이고 있습니다. 한국 투자자 입장에서는 애플의 AI 강화가 삼성전자 부품 수요에도 긍정적 영향을 줄 수 있습니다."
+    },
+    {
+      "rank": 2, "name": "Microsoft", "symbol": "MSFT", "sector": "Technology",
+      "price": "$415.20", "change_pct": "+1.10%", "market_cap": "$3.08T",
+      "news": [
+        "마이크로소프트 Azure AI 매출 35% 급성장",
+        "마이크로소프트, 코파일럿 기업용 구독 100만 돌파"
+      ],
+      "news_summary": "마이크로소프트는 클라우드·AI 사업에서 고성장을 이어가고 있습니다. AI 인프라 확장이 반도체 수요를 계속 끌어올려 한국 반도체 기업(삼성전자·SK하이닉스)의 수혜로 이어집니다."
+    },
+    {
+      "rank": 3, "name": "NVIDIA", "symbol": "NVDA", "sector": "Semiconductors",
+      "price": "$875.30", "change_pct": "+2.80%", "market_cap": "$2.15T",
+      "news": [
+        "엔비디아 블랙웰 GPU 수요 초과 공급 부족 지속",
+        "엔비디아 CEO, 2026년 AI 데이터센터 시장 2배 성장 전망"
+      ],
+      "news_summary": "엔비디아는 AI 칩 시장에서 압도적 우위를 유지하며 주가가 강세를 보이고 있습니다. 엔비디아의 GPU 수요 증가는 HBM을 공급하는 SK하이닉스와 삼성전자의 직접적인 수혜로 연결됩니다."
+    },
+    {
+      "rank": 4, "name": "Amazon", "symbol": "AMZN", "sector": "Technology/E-commerce",
+      "price": "$185.60", "change_pct": "+0.95%", "market_cap": "$1.95T",
+      "news": [
+        "아마존 AWS AI 인프라 투자 2026년 1,000억 달러 예고",
+        "아마존 1분기 클라우드 매출 17% 성장"
+      ],
+      "news_summary": "아마존은 대규모 AI 인프라 투자를 예고하며 클라우드 시장 지위를 강화하고 있습니다. AWS의 성장은 고성능 메모리 반도체 수요를 지속 견인해 한국 반도체 산업에 긍정적입니다."
+    },
+    {
+      "rank": 5, "name": "Alphabet", "symbol": "GOOGL", "sector": "Technology",
+      "price": "$172.40", "change_pct": "+1.25%", "market_cap": "$2.12T",
+      "news": [
+        "구글, 제미나이 2.0 출시로 AI 검색 시장 재편 도전",
+        "구글 1분기 광고 매출 사상 최대… AI 검색 상용화 효과"
+      ],
+      "news_summary": "구글은 AI 검색 상용화로 광고 매출을 극대화하고 있습니다. AI 경쟁 심화는 데이터센터 투자 확대로 이어져 반도체·서버 수요를 지속 자극합니다."
+    }
+  ],
+  "company_overall_summary": "한국 시총 상위 기업들은 AI 반도체(삼성전자·SK하이닉스) 수혜와 전기차 전환기 불확실성(LG에너지솔루션)이 엇갈리고 있습니다. 미국 빅테크는 AI 인프라 투자를 앞다퉈 확대하고 있어 HBM 등 고부가 반도체 수요가 지속될 것으로 보입니다. 결국 AI 수요의 지속 여부가 양국 시총 상위 기업들의 주가 방향성을 결정하는 핵심 변수이며, 단기 조정 가능성이 있더라도 중장기 AI 투자 사이클은 유효한 것으로 판단됩니다."
+}
