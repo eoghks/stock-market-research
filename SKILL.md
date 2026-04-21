@@ -155,8 +155,14 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
     {"name": "실업률",                 "value": "3.00%",  "period": "2026.03"},
     {"name": "경상수지",               "value": "23,192억원", "period": "2026.02"}
   ],
-  "kr_news": ["헤드라인1", "헤드라인2", "헤드라인3"],
-  "us_news": ["헤드라인1", "헤드라인2"],
+  "kr_news": [
+    {"title": "헤드라인1", "url": "https://www.hankyung.com/article/..."},
+    {"title": "헤드라인2", "url": "https://www.hankyung.com/article/..."}
+  ],
+  "us_news": [
+    {"title": "헤드라인1", "url": "https://www.hankyung.com/article/..."},
+    {"title": "헤드라인2", "url": null}
+  ],
   "kr_top10": [
     {
       "rank": 1,
@@ -166,7 +172,10 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
       "price": "78,500",
       "change_pct": "+1.20%",
       "market_cap": "약 468조원",
-      "news": ["뉴스 헤드라인1", "뉴스 헤드라인2", "뉴스 헤드라인3"],
+      "news": [
+        {"title": "뉴스 헤드라인1", "url": "https://www.hankyung.com/article/..."},
+        {"title": "뉴스 헤드라인2", "url": null}
+      ],
       "news_summary": "이 뉴스들이 투자자에게 의미하는 것을 2~3문장으로 한국어로 설명"
     }
   ],
@@ -179,7 +188,10 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
       "price": "$195.50",
       "change_pct": "+0.80%",
       "market_cap": "$3.2T",
-      "news": ["news headline 1", "news headline 2"],
+      "news": [
+        {"title": "news headline 1", "url": "https://www.hankyung.com/article/..."},
+        {"title": "news headline 2", "url": null}
+      ],
       "news_summary": "한국 투자자 관점에서 이 뉴스의 의미를 2~3문장으로 한국어로 설명"
     }
   ],

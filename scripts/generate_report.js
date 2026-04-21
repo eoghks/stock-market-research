@@ -36,7 +36,7 @@ const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, HeadingLevel, BorderStyle, WidthType,
   ShadingType, VerticalAlign, PageNumber, LevelFormat, TableOfContents,
-  PageBreak
+  PageBreak, ExternalHyperlink
 } = require('docx');
 const fs   = require('fs');
 const path = require('path');
@@ -230,6 +230,30 @@ function divider() {
 function bullet(text) {
   return new Paragraph({ numbering: { reference: 'bullets', level: 0 },
     children: [new TextRun({ text, size: 19, font: 'Arial' })] });
+}
+
+// 뉴스 항목 — URL이 있으면 클릭 가능한 하이퍼링크, 없으면 평문
+function newsRun(title, url) {
+  if (url && url.startsWith('http')) {
+    return new ExternalHyperlink({
+      link: url,
+      children: [new TextRun({
+        text: title,
+        size: 19, font: 'Arial',
+        color: '1558B0',       // 링크 파랑
+        underline: { type: 'single', color: '1558B0' },
+      })],
+    });
+  }
+  return new TextRun({ text: title, size: 19, font: 'Arial', color: COLORS.text });
+}
+
+// 뉴스 불릿 — URL 포함 버전
+function newsBullet(title, url) {
+  return new Paragraph({
+    numbering: { reference: 'bullets', level: 0 },
+    children: [newsRun(title, url)],
+  });
 }
 
 // ── 테이블 생성 함수 ─────────────────────────────────────────────────────────
@@ -467,13 +491,20 @@ function companyCard(c, idx) {
     })]
   });
 
-  const newsItems = (c.news && c.news.length > 0) ? c.news : ['(수집된 뉴스 없음)'];
+  // 뉴스 항목 정규화 (문자열 또는 {title, url} 객체 둘 다 처리)
+  const rawNews = (c.news && c.news.length > 0) ? c.news : [{ title: '(수집된 뉴스 없음)', url: null }];
+  const newsItems = rawNews.map(n => typeof n === 'string' ? { title: n, url: null } : n);
+
   const newsChildren = [
     new Paragraph({ spacing: { before: 0, after: 80 },
-      children: [new TextRun({ text: '📰 주요 뉴스', bold: true, size: 18, font: 'Arial', color: '1F4E79' })] }),
+      children: [new TextRun({ text: '📰 주요 뉴스', bold: true, size: 18, font: 'Arial', color: COLORS.primary })] }),
     ...newsItems.map(n =>
       new Paragraph({ spacing: { before: 40, after: 40 },
-        children: [new TextRun({ text: `• ${n}`, size: 17, font: 'Arial', color: '333333' })] })
+        children: [
+          new TextRun({ text: '• ', size: 19, font: 'Arial', color: COLORS.text }),
+          newsRun(n.title, n.url),
+        ]
+      })
     )
   ];
 
