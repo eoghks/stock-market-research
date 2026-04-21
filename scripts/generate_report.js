@@ -690,6 +690,21 @@ Packer.toBuffer(doc).then(buf => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(outputPath, buf);
   console.log(`✅ 보고서 저장 완료: ${outputPath}`);
+
+  // ── PDF 변환 (LibreOffice headless) ──────────────────────────────
+  try {
+    const { convertToPdf } = require(path.join(__dirname, 'pdf', 'convert_to_pdf.js'));
+    const pdfResult = convertToPdf(outputPath, dir);
+    if (pdfResult) {
+      console.log(`📄 PDF 생성 완료: ${pdfResult}`);
+    } else {
+      console.log('ℹ️  PDF 변환 건너뜀 (LibreOffice 미설치). DOCX만 저장됨.');
+    }
+  } catch (pdfErr) {
+    console.warn('⚠️  PDF 변환 모듈 오류 (DOCX는 정상 저장됨):', pdfErr.message);
+  }
+  // ─────────────────────────────────────────────────────────────────
+
 }).catch(err => {
   console.error('❌ 보고서 생성 실패:', err.message);
   process.exit(1);
