@@ -311,6 +311,25 @@ node "${SKILL_DIR}/scripts/generate_report.js" \
 
 ---
 
+## 문서 산출물 저장 규칙
+
+**이 플러그인과 관련된 모든 문서는 `docs/` 폴더 하위에 저장합니다.**
+
+| 카테고리 | 저장 위치 | 예시 |
+|----------|-----------|------|
+| 아키텍처·설계 | `docs/architecture/` | `pipeline.md`, `data-sources.md` |
+| 사용법·가이드 | `docs/usage/` | `getting-started.md`, `pdf-setup.md` |
+| 버전별 변경 이력 | `docs/changelog/` | `v2.0.0.md` |
+| 용어 사전 | `docs/glossary/` | `glossary.md`, `glossary.json` |
+| 생성 보고서 (로컬만) | `docs/reports/` | `.gitignore` 적용됨 |
+
+**명명 규칙:** `docs/{카테고리}/{kebab-case-제목}.md`
+
+**용어 사전 규칙:** `docs/glossary/glossary.md` 에 누적 관리. 한 번 등록한 용어는 재기록 금지.
+새로운 스킬 실행 결과로 생성되는 문서도 이 규칙을 따릅니다.
+
+---
+
 ## 주의사항
 
 - `finance.naver.com` 은 Claude in Chrome 보안 제한으로 직접 접근 불가 → 네이버 MCP로만 가능
