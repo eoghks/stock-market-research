@@ -96,7 +96,14 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
     - 예: https://www.hankyung.com/search?query=애플 또는 https://www.hankyung.com/search?query=Apple
     - 각 기업의 뉴스를 한두 문장으로 요약하고, 한국 투자자 관점에서 의미를 한국어로 작성하세요.
 
-11. 글로벌 거시 정세 뉴스 수집 (macro_headlines):
+11. 한국·미국 섹터별 등락률 수집 (kr_sectors / us_sectors):
+    한국: https://markets.hankyung.com/index-info/industry 에서
+    반도체·자동차·금융·바이오·2차전지·게임·조선·건설·통신·철강 업종 등락률 수집.
+    미국: https://www.hankyung.com/globalmarket 또는
+    Yahoo Finance 섹터 ETF (XLK/XLF/XLE/XLV/XLY/XLI/XLB/XLP/XLRE/XLU) 등락률 수집.
+    접근 불가 시 빈 배열([])로 처리하세요.
+
+12. 글로벌 거시 정세 뉴스 수집 (macro_headlines):
     아래 두 URL에서 거시 뉴스를 최대 6개 수집하세요.
     키워드 우선순위: 전쟁·제재·금리·유가·환율·지정학 리스크 순.
     - https://www.hankyung.com/international  (국제 섹션)
@@ -203,6 +210,26 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
       ],
       "news_summary": "한국 투자자 관점에서 이 뉴스의 의미를 2~3문장으로 한국어로 설명"
     }
+  ],
+  "kr_sectors": [
+    {"name": "반도체", "change_pct": "+1.23%"},
+    {"name": "자동차", "change_pct": "-0.45%"},
+    {"name": "금융",   "change_pct": "+0.30%"},
+    {"name": "바이오", "change_pct": "+2.10%"},
+    {"name": "2차전지","change_pct": "-1.20%"},
+    {"name": "게임",   "change_pct": "+0.80%"},
+    {"name": "조선",   "change_pct": "+3.50%"},
+    {"name": "건설",   "change_pct": "-0.60%"}
+  ],
+  "us_sectors": [
+    {"name": "기술(XLK)",     "change_pct": "+1.50%"},
+    {"name": "금융(XLF)",     "change_pct": "+0.80%"},
+    {"name": "에너지(XLE)",   "change_pct": "-0.30%"},
+    {"name": "헬스케어(XLV)", "change_pct": "+0.20%"},
+    {"name": "소비재(XLY)",   "change_pct": "+1.10%"},
+    {"name": "산업재(XLI)",   "change_pct": "+0.60%"},
+    {"name": "소재(XLB)",     "change_pct": "-0.40%"},
+    {"name": "필수소비(XLP)", "change_pct": "+0.10%"}
   ],
   "macro_headlines": [
     {

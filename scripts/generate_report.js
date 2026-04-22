@@ -51,6 +51,13 @@ try {
   console.warn('[차트] 차트 모듈 로드 실패 (차트 없이 계속):', e.message);
 }
 
+let renderHeatmap;
+try {
+  ({ renderHeatmap } = require(path.join(__dirname, 'charts', 'render_heatmap.js')));
+} catch (e) {
+  console.warn('[히트맵] 히트맵 모듈 로드 실패 (히트맵 없이 계속):', e.message);
+}
+
 // ── 데이터 로드 ──────────────────────────────────────────────────────────────
 const raw  = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 const now  = new Date();
@@ -77,6 +84,8 @@ const kr_top10          = raw.kr_top10          || [];
 const us_top10          = raw.us_top10          || [];
 const co_summary        = raw.company_overall_summary || '';
 const macro_headlines   = raw.macro_headlines   || [];
+const kr_sectors        = raw.kr_sectors        || [];
+const us_sectors        = raw.us_sectors        || [];
 
 // ── 디자인 토큰 ──────────────────────────────────────────────────────────────
 const COLORS = {
@@ -709,6 +718,33 @@ function chartImage(imagePath) {
     return symbols.map(sym => chartImage(charts[`${sym}_${activePeriod}`])).filter(Boolean);
   }
 
+  // ② 히트맵 생성
+  const chartsDir = path.join(path.dirname(outputPath), 'charts_tmp');
+  if (!fs.existsSync(chartsDir)) fs.mkdirSync(chartsDir, { recursive: true });
+
+  let krHeatmapPath = null;
+  let usHeatmapPath = null;
+  if (renderHeatmap) {
+    if (kr_sectors.length > 0) {
+      krHeatmapPath = await renderHeatmap({
+        title:      '한국 섹터별 등락률',
+        sectors:    kr_sectors,
+        outputPath: path.join(chartsDir, 'kr_sectors.png'),
+        cols: 4, width: 900, height: 300,
+      });
+    }
+    if (us_sectors.length > 0) {
+      usHeatmapPath = await renderHeatmap({
+        title:      '미국 섹터 ETF 등락률',
+        sectors:    us_sectors,
+        outputPath: path.join(chartsDir, 'us_sectors.png'),
+        cols: 4, width: 900, height: 300,
+      });
+    }
+  }
+
+  function heatmapImage(imgPath) { return chartImage(imgPath); } // 동일 렌더 로직 재사용
+
   const doc = new Document({
   styles: {
     default: { document: { run: { font: 'Arial', size: 20 } } },
@@ -843,6 +879,13 @@ function chartImage(imagePath) {
       ] : []),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-4. 주요 이슈')] }),
       ...finalKrIssues.map(t => bullet(t)),
+      ...(krHeatmapPath ? [
+        sp(200),
+        new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-5. 섹터별 등락률 히트맵')] }),
+        body('업종별 자금 흐름을 한눈에 확인하세요. 진초록=강한 상승 / 연초록=소폭 상승 / 연빨강=소폭 하락 / 진빨강=강한 하락', { color:'595959', size:18 }),
+        sp(80),
+        heatmapImage(krHeatmapPath),
+      ] : []),
       new Paragraph({ children:[new PageBreak()] }),
 
       // ── 2. 미국 증시 ───────────────────────────────────────────────────────
@@ -861,6 +904,13 @@ function chartImage(imagePath) {
       ...chartBlock(['SP500', 'NASDAQ']),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('2-2. 주요 이슈')] }),
       ...finalUsIssues.map(t => bullet(t)),
+      ...(usHeatmapPath ? [
+        sp(200),
+        new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('2-3. 섹터 ETF 등락률 히트맵')] }),
+        body('SPDR 섹터 ETF 기준 미국 업종별 자금 흐름입니다. XLK=기술 / XLF=금융 / XLE=에너지 / XLV=헬스케어 / XLY=임의소비재', { color:'595959', size:18 }),
+        sp(80),
+        heatmapImage(usHeatmapPath),
+      ] : []),
       new Paragraph({ children:[new PageBreak()] }),
 
       // ── 3. 글로벌 지수 ─────────────────────────────────────────────────────
