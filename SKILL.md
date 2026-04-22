@@ -234,6 +234,46 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
 
 ---
 
+## Step 1.5: 시계열 데이터 수집 (차트용, 선택적)
+
+Step 1 완료 후 차트 이미지 생성을 원하면 아래 데이터를 수집해 `merged_data.json`의 `timeseries` 필드에 추가하세요.
+**수집이 어려우면 skip해도 보고서 생성에 지장 없습니다** (차트만 생략됨).
+
+### 수집 대상 및 필드명
+
+| 필드 키 | 심볼 | 출처 URL |
+|---|---|---|
+| `KOSPI_daily` | 코스피 7일 | `https://markets.hankyung.com/indices/kospi` |
+| `KOSDAQ_daily` | 코스닥 7일 | `https://markets.hankyung.com/indices/kosdaq` |
+| `SP500_daily` | S&P 500 7일 | `https://finance.yahoo.com/quote/%5EGSPC/history/` |
+| `NASDAQ_daily` | 나스닥 7일 | `https://finance.yahoo.com/quote/%5EIXIC/history/` |
+| `USD_KRW_daily` | 달러/원 7일 | `https://markets.hankyung.com/forex/USD` |
+
+월요일에는 `*_weekly` (최근 4주), 매월 1일에는 `*_monthly` (최근 12개월) 키도 수집하세요.
+
+### merged_data.json timeseries 필드 스키마
+
+```json
+{
+  "timeseries": {
+    "KOSPI_daily": [
+      {"date": "04/15", "value": 2587.23},
+      {"date": "04/16", "value": 2601.45},
+      {"date": "04/17", "value": 2595.10}
+    ],
+    "KOSDAQ_daily": [...],
+    "SP500_daily":  [...],
+    "NASDAQ_daily": [...],
+    "USD_KRW_daily":[...]
+  }
+}
+```
+
+> **주의:** `date`는 `MM/DD` 형식, `value`는 순수 숫자(쉼표·단위 없음).
+> 주간(`weekly`) 키는 최근 4주 데이터(4개 포인트), 월간(`monthly`) 키는 최근 12개월(12개 포인트).
+
+---
+
 ## Step 2: 데이터 통합
 
 두 서브에이전트가 완료되면:

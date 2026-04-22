@@ -36,10 +36,20 @@ const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, HeadingLevel, BorderStyle, WidthType,
   ShadingType, VerticalAlign, PageNumber, LevelFormat, TableOfContents,
-  PageBreak, ExternalHyperlink
+  PageBreak, ExternalHyperlink, ImageRun
 } = require('docx');
 const fs   = require('fs');
 const path = require('path');
+
+// ── 차트 모듈 로드 ─────────────────────────────────────────────────────────
+let prepareChartData, renderLineChart, getChartSchedule;
+try {
+  ({ prepareChartData } = require(path.join(__dirname, 'charts', 'fetch_timeseries.js')));
+  ({ renderLineChart }  = require(path.join(__dirname, 'charts', 'render_chart.js')));
+  ({ getChartSchedule } = require(path.join(__dirname, 'charts', 'schedule.js')));
+} catch (e) {
+  console.warn('[차트] 차트 모듈 로드 실패 (차트 없이 계속):', e.message);
+}
 
 // ── 데이터 로드 ──────────────────────────────────────────────────────────────
 const raw  = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
@@ -579,8 +589,64 @@ const finalKrIssues   = (kr_issues.length   > 0) ? kr_issues   : DEFAULT_KR_ISSU
 const finalUsIssues   = (us_issues.length   > 0) ? us_issues   : DEFAULT_US_ISSUES;
 const finalConclusions= (conclusions.length > 0) ? conclusions : DEFAULT_CONCLUSIONS;
 
-// ── 문서 구성 ────────────────────────────────────────────────────────────────
-const doc = new Document({
+// ── 차트 생성 헬퍼 ────────────────────────────────────────────────────────────
+async function buildCharts(mergedData) {
+  if (!prepareChartData || !renderLineChart || !getChartSchedule) return {};
+
+  const schedule   = getChartSchedule();
+  const periods    = Object.entries(schedule).filter(([, on]) => on).map(([p]) => p);
+  const outDir     = path.join(path.dirname(outputPath), 'charts_tmp');
+  const periodLabel = { daily: '7일', weekly: '4주', monthly: '12개월' };
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  const results = {};
+  for (const period of periods) {
+    const datasets = prepareChartData(mergedData, period);
+    for (const ds of datasets) {
+      const filePath  = path.join(outDir, `${ds.symbol}_${period}.png`);
+      const chartPath = await renderLineChart({
+        title:      `${ds.label} (${periodLabel[period]})`,
+        labels:     ds.labels,
+        datasets:   [{ label: ds.label, data: ds.values, color: ds.color }],
+        outputPath: filePath,
+      });
+      if (chartPath) results[`${ds.symbol}_${period}`] = chartPath;
+    }
+  }
+  return results;
+}
+
+function chartImage(imagePath) {
+  if (!imagePath || !fs.existsSync(imagePath)) return null;
+  try {
+    const imageData = fs.readFileSync(imagePath);
+    return new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 160, after: 160 },
+      children: [new ImageRun({
+        data:           imageData,
+        transformation: { width: 630, height: 252 },
+        type:           'png',
+      })],
+    });
+  } catch (e) {
+    console.warn('[차트] 이미지 삽입 실패:', e.message);
+    return null;
+  }
+}
+
+// ── 문서 구성 (async) ─────────────────────────────────────────────────────────
+(async () => {
+  // ① 차트 생성 (timeseries 데이터가 있을 때만 생성됨)
+  const charts = await buildCharts(raw);
+  const schedule     = getChartSchedule ? getChartSchedule() : { daily: true, weekly: false, monthly: false };
+  const activePeriod = schedule.monthly ? 'monthly' : schedule.weekly ? 'weekly' : 'daily';
+
+  function chartBlock(symbols) {
+    return symbols.map(sym => chartImage(charts[`${sym}_${activePeriod}`])).filter(Boolean);
+  }
+
+  const doc = new Document({
   styles: {
     default: { document: { run: { font: 'Arial', size: 20 } } },
     paragraphStyles: [
@@ -681,6 +747,7 @@ const doc = new Document({
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-1. 주요 지수 현황')] }),
       indexTable(kr_indices, [3120,2080,2080,2080]),
       sp(200),
+      ...chartBlock(['KOSPI', 'KOSDAQ']),
       ...(Object.keys(kospi_detail).length > 0 ? [
         new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-2. 코스피 상세 지표')] }),
         kospiDetailTable(), sp(200),
@@ -706,6 +773,7 @@ const doc = new Document({
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('2-1. 주요 지수 현황')] }),
       indexTable(us_indices, [3120,2080,2080,2080]),
       sp(200),
+      ...chartBlock(['SP500', 'NASDAQ']),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('2-2. 주요 이슈')] }),
       ...finalUsIssues.map(t => bullet(t)),
       new Paragraph({ children:[new PageBreak()] }),
@@ -734,6 +802,7 @@ const doc = new Document({
       sp(100),
       fxDetailTable(),
       sp(200),
+      ...chartBlock(['USD_KRW']),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('4-2. 환율 종합 분석')] }),
       statusBox('⚠️  원화 약세 지속 — 주의 필요',
         '원화 약세는 에너지 수입 비용 급증과 외국인 주식 매도가 겹친 결과입니다. 수입 물가 상승 → 소비자 물가 상승으로 이어져 일상 속 장바구니 물가에 영향을 미칩니다. 한국은행은 외환시장 쏠림이 뚜렷해지면 대응하겠다는 입장이나, 단기 반전은 어려울 전망입니다.', false),
@@ -801,7 +870,8 @@ const doc = new Document({
   }]
 });
 
-Packer.toBuffer(doc).then(buf => {
+  // ③ DOCX 저장
+  const buf = await Packer.toBuffer(doc);
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(outputPath, buf);
@@ -821,7 +891,7 @@ Packer.toBuffer(doc).then(buf => {
   }
   // ─────────────────────────────────────────────────────────────────
 
-}).catch(err => {
+})().catch(err => {
   console.error('❌ 보고서 생성 실패:', err.message);
   process.exit(1);
 });
