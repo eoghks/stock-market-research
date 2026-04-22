@@ -54,7 +54,12 @@ git checkout -b breaking/my-change     # MAJOR
 # 5. SKILL.md 버전 표기 업데이트
 #    # 📈 증시 조사 보고서 자동 생성 스킬 (v2.1.0)
 
-# 6. main 머지 + 태그
+# 6. .skill 파일 재생성 (필수 — 버전 업 시 항상 실행)
+powershell -File scripts/build_skill.ps1
+#    → stock-market-research.skill 이 루트 상위 폴더에 생성됨
+#    → Claude customize에서 해당 파일로 스킬 재등록
+
+# 7. main 머지 + 태그
 git checkout main
 git merge feat/my-feature
 git tag -a v2.1.0 -m "v2.1.0 — 기능 설명"
