@@ -1,0 +1,22 @@
+[
+  {"term": "PER",       "first_added": "2026-04-22", "related": ["PBR", "ROE"]},
+  {"term": "PBR",       "first_added": "2026-04-22", "related": ["PER", "ROE"]},
+  {"term": "ROE",       "first_added": "2026-04-22", "related": ["PER", "PBR"]},
+  {"term": "외국인 순매수", "first_added": "2026-04-22", "related": ["수급", "코스피"]},
+  {"term": "시가총액",  "first_added": "2026-04-22", "related": ["코스피200", "S&P500"]},
+  {"term": "코스피200", "first_added": "2026-04-22", "related": ["코스피", "시가총액"]},
+  {"term": "S&P500",    "first_added": "2026-04-22", "related": ["나스닥", "다우존스"]},
+  {"term": "VIX",       "first_added": "2026-04-22", "related": ["공포지수", "변동성"]},
+  {"term": "연준(Fed)", "first_added": "2026-04-22", "related": ["FOMC", "금리"]},
+  {"term": "FOMC",      "first_added": "2026-04-22", "related": ["연준", "금리"]},
+  {"term": "CPI",       "first_added": "2026-04-22", "related": ["물가", "금리"]},
+  {"term": "GDP",       "first_added": "2026-04-22", "related": ["경제성장률", "경기"]},
+  {"term": "환율",      "first_added": "2026-04-22", "related": ["USD/KRW", "원화"]},
+  {"term": "WTI",       "first_added": "2026-04-22", "related": ["유가", "에너지"]},
+  {"term": "나스닥",    "first_added": "2026-04-22", "related": ["S&P500", "빅테크"]},
+  {"term": "코스피",    "first_added": "2026-04-22", "related": ["코스닥", "한국증시"]},
+  {"term": "코스닥",    "first_added": "2026-04-22", "related": ["코스피", "중소형주"]},
+  {"term": "순매수",    "first_added": "2026-04-22", "related": ["수급", "외국인"]},
+  {"term": "ETF",       "first_added": "2026-04-22", "related": ["펀드", "섹터"]},
+  {"term": "섹터",      "first_added": "2026-04-22", "related": ["업종", "ETF"]}
+]

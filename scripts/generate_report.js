@@ -58,6 +58,13 @@ try {
   console.warn('[히트맵] 히트맵 모듈 로드 실패 (히트맵 없이 계속):', e.message);
 }
 
+let checkAndUpdateGlossary;
+try {
+  ({ checkAndUpdateGlossary } = require(path.join(__dirname, 'insights', 'glossary_check.js')));
+} catch (e) {
+  console.warn('[용어사전] 모듈 로드 실패 (용어사전 없이 계속):', e.message);
+}
+
 // ── 데이터 로드 ──────────────────────────────────────────────────────────────
 const raw  = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 const now  = new Date();
@@ -978,6 +985,15 @@ function chartImage(imagePath) {
 
   function heatmapImage(imgPath) { return chartImage(imgPath); } // 동일 렌더 로직 재사용
 
+  // ③ 용어 사전 체크
+  const glossaryDir = path.join(__dirname, '..', 'docs', 'glossary');
+  const reportText  = JSON.stringify(raw); // 데이터 전체를 텍스트로 사용
+  let newGlossaryTerms = [];
+  if (checkAndUpdateGlossary) {
+    try { newGlossaryTerms = checkAndUpdateGlossary(reportText, glossaryDir); }
+    catch (ge) { console.warn('[용어사전] 체크 실패:', ge.message); }
+  }
+
   const doc = new Document({
   styles: {
     default: { document: { run: { font: 'Arial', size: 20 } } },
@@ -1309,6 +1325,32 @@ function chartImage(imagePath) {
       bullet('원화 약세 지속 시 → 수출 기업(IT·자동차) 수혜, 수입 기업·해외여행 비용 증가'),
       bullet('미국 금리 정책 변화 → 달러 강세/약세로 이어져 원화·신흥국 통화 전반에 연쇄 영향'),
       bullet('GDP 저성장+물가 상승 공존 → 방어적 자산(배당주·채권) 비중 검토 필요'),
+      // ── 부록: 이번 호 신규 용어 (있을 때만) ──────────────────────────────
+      ...(() => {
+        if (!newGlossaryTerms || newGlossaryTerms.length === 0) return [];
+        return [
+          sp(300),
+          new Paragraph({ heading:HeadingLevel.HEADING_2,
+            children:[new TextRun('부록: 이번 호 신규 용어')] }),
+          body('아래 용어는 이번 보고서에서 처음 등장한 용어입니다. 전체 용어 사전은 docs/glossary/glossary.md를 참조하세요.',
+            { color: '595959', size: 18 }),
+          sp(80),
+          new Table({
+            width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: [2200, 7160],
+            rows: [
+              new TableRow({ tableHeader: true, children: [hCell('용어', 2200), hCell('설명', 7160)] }),
+              ...newGlossaryTerms.map((t, i) => {
+                const bg = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+                return new TableRow({ children: [
+                  dCell(t.term, 2200, { bold: true, bg, align: AlignmentType.LEFT }),
+                  dCell(t.def,  7160, { bg, align: AlignmentType.LEFT }),
+                ]});
+              }),
+            ],
+          }),
+          sp(200),
+        ];
+      })(),
       divider(),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:200, after:0 },
         children:[new TextRun({ text:'※ 본 보고서는 투자 참고 목적의 정보 제공이며, 투자 결과에 대한 책임은 이용자 본인에게 있습니다.',
