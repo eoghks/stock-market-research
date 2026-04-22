@@ -73,9 +73,10 @@ const us_news       = raw.us_news       || [];
 const kr_issues     = raw.kr_issues     || kr_news.slice(0, 5);
 const us_issues     = raw.us_issues     || us_news.slice(0, 5);
 const conclusions   = raw.conclusions   || [];
-const kr_top10      = raw.kr_top10      || [];
-const us_top10      = raw.us_top10      || [];
-const co_summary    = raw.company_overall_summary || '';
+const kr_top10          = raw.kr_top10          || [];
+const us_top10          = raw.us_top10          || [];
+const co_summary        = raw.company_overall_summary || '';
+const macro_headlines   = raw.macro_headlines   || [];
 
 // ── 디자인 토큰 ──────────────────────────────────────────────────────────────
 const COLORS = {
@@ -554,6 +555,68 @@ function companyCard(c, idx) {
   ];
 }
 
+// ── 거시 뉴스 헬퍼 ───────────────────────────────────────────────────────────
+const IMPORTANCE_COLOR = { high: 'C00000', medium: 'ED7D31', low: '595959' };
+const IMPORTANCE_LABEL = { high: '🔴 높음', medium: '🟡 보통', low: '⚪ 낮음' };
+const CATEGORY_COLOR   = {
+  금리: '1F4E79', 지정학: '7030A0', 에너지: 'C00000',
+  환율: '2E75B6', 무역: '375623', 기타: '595959',
+};
+
+function macroHeadlineTable(headlines) {
+  if (!headlines || headlines.length === 0) return null;
+  const cols = [1200, 1400, 3160, 3600];
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: cols,
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        hCell('중요도', cols[0]), hCell('분야', cols[1]),
+        hCell('헤드라인', cols[2]), hCell('핵심 내용', cols[3]),
+      ]}),
+      ...headlines.map((h, i) => {
+        const bg        = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+        const impColor  = IMPORTANCE_COLOR[h.importance] || COLORS.neutral;
+        const impLabel  = IMPORTANCE_LABEL[h.importance] || h.importance || '-';
+        const catColor  = CATEGORY_COLOR[h.category]   || COLORS.neutral;
+        return new TableRow({ children: [
+          new TableCell({
+            borders: bdrs, width: { size: cols[0], type: WidthType.DXA },
+            shading: { fill: bg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({ alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: impLabel, size: 17, font: 'Arial', color: impColor, bold: true })] })],
+          }),
+          new TableCell({
+            borders: bdrs, width: { size: cols[1], type: WidthType.DXA },
+            shading: { fill: bg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({ alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: h.category || '-', size: 18, font: 'Arial', color: catColor, bold: true })] })],
+          }),
+          new TableCell({
+            borders: bdrs, width: { size: cols[2], type: WidthType.DXA },
+            shading: { fill: bg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 160, right: 160 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({
+              children: [newsRun(h.title || '-', h.url)] })],
+          }),
+          new TableCell({
+            borders: bdrs, width: { size: cols[3], type: WidthType.DXA },
+            shading: { fill: bg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 160, right: 160 },
+            verticalAlign: VerticalAlign.TOP,
+            children: [new Paragraph({
+              children: [new TextRun({ text: h.summary || '-', size: 18, font: 'Arial', color: COLORS.text })] })],
+          }),
+        ]});
+      }),
+    ],
+  });
+}
+
 function companyNewsList(companies, isKorean) {
   if (!companies || companies.length === 0) {
     return [body(
@@ -732,6 +795,28 @@ function chartImage(imagePath) {
       // ── 목차 ──────────────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('목  차')] }),
       new TableOfContents('목차', { hyperlink:true, headingStyleRange:'1-2' }),
+      new Paragraph({ children:[new PageBreak()] }),
+
+      // ── 0. 글로벌 거시 정세 ────────────────────────────────────────────────
+      new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('0. 글로벌 거시 정세')] }),
+      (() => {
+        const highCount = macro_headlines.filter(h => h.importance === 'high').length;
+        const cats = [...new Set(macro_headlines.map(h => h.category).filter(Boolean))];
+        const summary = macro_headlines.length > 0
+          ? `주요 이슈 ${macro_headlines.length}건 수집  |  핵심 분야: ${cats.join(' · ') || '-'}  |  고위험 ${highCount}건`
+          : `글로벌 거시 정세 데이터 없음 — 크롤링 재실행 필요`;
+        return sectionSummary(summary);
+      })(),
+      sp(120),
+      ...(macro_headlines.length > 0
+        ? [
+            infoBox('글로벌 거시 정세란?',
+              '금리·지정학·에너지·무역 등 세계 경제 전반의 큰 흐름입니다. 이 요소들이 환율·증시 방향성을 먼저 결정합니다. 아래 표의 "높음" 항목을 가장 먼저 확인하세요.'),
+            sp(120),
+            macroHeadlineTable(macro_headlines),
+          ]
+        : [body('(글로벌 거시 정세 데이터가 없습니다. 크롤링 에이전트가 hankyung.com/international 및 hankyung.com/economy를 수집해야 합니다.)',
+            { color: '999999', size: 18 })]),
       new Paragraph({ children:[new PageBreak()] }),
 
       // ── 1. 한국 증시 ───────────────────────────────────────────────────────

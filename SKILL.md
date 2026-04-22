@@ -96,7 +96,16 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
     - 예: https://www.hankyung.com/search?query=애플 또는 https://www.hankyung.com/search?query=Apple
     - 각 기업의 뉴스를 한두 문장으로 요약하고, 한국 투자자 관점에서 의미를 한국어로 작성하세요.
 
-11. 종합 분석 작성:
+11. 글로벌 거시 정세 뉴스 수집 (macro_headlines):
+    아래 두 URL에서 거시 뉴스를 최대 6개 수집하세요.
+    키워드 우선순위: 전쟁·제재·금리·유가·환율·지정학 리스크 순.
+    - https://www.hankyung.com/international  (국제 섹션)
+    - https://www.hankyung.com/economy        (경제 섹션)
+    각 뉴스에 대해 category(금리/지정학/에너지/환율/무역/기타)와
+    importance(high/medium/low)를 판단해 부여하세요.
+    접근 불가 시 빈 배열([])로 처리하세요.
+
+12. 종합 분석 작성:
     수집된 한국·미국 시총 상위 기업 뉴스 전체를 종합하여,
     현재 증시 흐름에서 이 기업들의 뉴스가 갖는 의미를 3~5문장으로 작성하세요.
     (company_overall_summary 필드에 저장)
@@ -193,6 +202,22 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
         {"title": "news headline 2", "url": null}
       ],
       "news_summary": "한국 투자자 관점에서 이 뉴스의 의미를 2~3문장으로 한국어로 설명"
+    }
+  ],
+  "macro_headlines": [
+    {
+      "title": "Fed 금리 동결 결정 — 시장 기대 부합",
+      "summary": "연준이 기준금리를 5.25-5.50%로 유지. 연내 1회 인하 전망 유지.",
+      "url": "https://www.hankyung.com/article/...",
+      "category": "금리",
+      "importance": "high"
+    },
+    {
+      "title": "중동 긴장 고조 — 호르무즈 해협 통항 우려",
+      "summary": "이란-이스라엘 갈등 격화로 유가 급등 압력. WTI 배럴당 90달러 돌파.",
+      "url": "https://www.hankyung.com/article/...",
+      "category": "지정학",
+      "importance": "high"
     }
   ],
   "company_overall_summary": "양국 시총 상위 기업 뉴스 흐름을 종합하여, 현재 증시에 미치는 영향과 시사점을 3~5문장으로 작성"
@@ -352,13 +377,14 @@ node "${SKILL_DIR}/scripts/generate_report.js" \
 
 ```
 메시지 1: 📊 헤더 (보고서 개요 + 기준일)
-메시지 2: 🇰🇷 한국 증시 (코스피/코스닥 현재가·등락률·이슈)
-메시지 3: 🇺🇸 미국 증시 (다우·S&P500·나스닥 현재가·등락률·이슈)
-메시지 4: 🌍 글로벌 주요 지수
-메시지 5: 💱 환율 현황 (원달러·엔·위안·유로 + 간단 설명)
-메시지 6: 📉 거시경제 지표
-메시지 7: 🏢 한국·미국 시총 10위 기업 주요 뉴스 요약
-메시지 8: ✅ 종합 결론 및 시사점
+메시지 2: 🌐 글로벌 거시 정세 (macro_headlines 상위 3개 — 중요도 high 우선)
+메시지 3: 🇰🇷 한국 증시 (코스피/코스닥 현재가·등락률·이슈)
+메시지 4: 🇺🇸 미국 증시 (다우·S&P500·나스닥 현재가·등락률·이슈)
+메시지 5: 🌍 글로벌 주요 지수
+메시지 6: 💱 환율 현황 (원달러·엔·위안·유로 + 간단 설명)
+메시지 7: 📉 거시경제 지표
+메시지 8: 🏢 한국·미국 시총 10위 기업 주요 뉴스 요약
+메시지 9: ✅ 종합 결론 및 시사점
 ```
 
 ---
