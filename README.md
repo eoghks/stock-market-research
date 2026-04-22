@@ -1,9 +1,11 @@
 # 📈 stock-market-research
 
-> 한국·미국 증시를 자동 조사하고 **상세 Word·PDF 보고서**를 생성하는 Claude Code 플러그인 (v2)
+> 한국·미국 증시를 자동 조사하고 **상세 Word·PDF 보고서**를 생성하는 Claude Code 플러그인
 
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![Node](https://img.shields.io/badge/Node.js-18%2B-green)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![SemVer](https://img.shields.io/badge/versioning-SemVer%202.0-orange)
 ![Claude](https://img.shields.io/badge/Claude-Code%20Plugin-purple)
 
 ---
@@ -149,9 +151,11 @@ stock-market-research/
 - [파이프라인 구조](docs/architecture/pipeline.md)
 - [데이터 소스 및 스키마](docs/architecture/data-sources.md)
 - [보고서 섹션 구조](docs/architecture/report-sections.md)
+- [버전 관리 정책 (SemVer)](docs/architecture/versioning.md)
 - [빠른 시작](docs/usage/getting-started.md)
 - [PDF 설정](docs/usage/pdf-setup.md)
 - [문제 해결](docs/usage/troubleshooting.md)
+- [변경 이력](docs/changelog/)
 - [용어 사전](docs/glossary/glossary.md)
 
 ---

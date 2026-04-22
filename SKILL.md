@@ -524,6 +524,21 @@ node "${SKILL_DIR}/scripts/generate_report.js" \
 
 ---
 
+## 버전 관리
+
+이 플러그인은 **시맨틱 버저닝(SemVer)** `MAJOR.MINOR.PATCH`를 따릅니다.
+
+| 버전 올리는 시점 | 유형 | 예시 |
+|---|---|---|
+| JSON 스키마 호환 불가 변경, CLI 인터페이스 변경 | **MAJOR** | `2.x.x → 3.0.0` |
+| 신규 섹션·기능·선택적 스키마 필드 추가 | **MINOR** | `2.0.x → 2.1.0` |
+| 버그 수정, 셀렉터 패치, 문서 수정 | **PATCH** | `2.1.x → 2.1.1` |
+
+상세 규칙 → [docs/architecture/versioning.md](docs/architecture/versioning.md)  
+변경 이력 → [docs/changelog/](docs/changelog/)
+
+---
+
 ## 주의사항
 
 - `finance.naver.com` 은 Claude in Chrome 보안 제한으로 직접 접근 불가 → 네이버 MCP로만 가능
