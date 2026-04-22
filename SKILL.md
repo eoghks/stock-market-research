@@ -96,7 +96,23 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
     - 예: https://www.hankyung.com/search?query=애플 또는 https://www.hankyung.com/search?query=Apple
     - 각 기업의 뉴스를 한두 문장으로 요약하고, 한국 투자자 관점에서 의미를 한국어로 작성하세요.
 
-11. 한국·미국 섹터별 등락률 수집 (kr_sectors / us_sectors):
+11. 수급 동향 수집 (flow_data):
+    https://markets.hankyung.com/indices/kospi 또는
+    https://datacenter.hankyung.com/investors 에서
+    코스피·코스닥의 외국인/기관/개인 당일 순매수 금액을 수집하세요.
+    외국인 순매수 상위 5종목 / 순매도 상위 5종목도 함께 수집하세요.
+    접근 불가 시 빈 객체({})로 처리하세요.
+
+12. 시장 심리 지표 수집 (sentiment):
+    아래 5개 지표를 수집하세요. 접근 불가 시 해당 항목 제외.
+    - VIX(공포지수): https://www.hankyung.com/globalmarket 또는 Yahoo Finance
+    - 美 10년 국채금리: https://datacenter.hankyung.com/major-indices
+    - WTI 유가: https://datacenter.hankyung.com/major-indices 또는 hankyung 원자재 섹션
+    - 금(Gold): 동일 소스
+    - 비트코인: https://www.hankyung.com/globalmarket
+    신호(signal)는 VIX<20→안정, VIX≥25→위험, 금리상승→주의, 유가급등→주의로 판단하세요.
+
+13. 한국·미국 섹터별 등락률 수집 (kr_sectors / us_sectors):
     한국: https://markets.hankyung.com/index-info/industry 에서
     반도체·자동차·금융·바이오·2차전지·게임·조선·건설·통신·철강 업종 등락률 수집.
     미국: https://www.hankyung.com/globalmarket 또는
@@ -210,6 +226,25 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
       ],
       "news_summary": "한국 투자자 관점에서 이 뉴스의 의미를 2~3문장으로 한국어로 설명"
     }
+  ],
+  "flow_data": {
+    "kospi":  {"foreign": "+1,234억원", "institution": "-567억원", "retail": "-667억원"},
+    "kosdaq": {"foreign": "-234억원",  "institution": "+123억원",  "retail": "+111억원"},
+    "top_buys": [
+      {"rank": 1, "name": "삼성전자",      "ticker": "005930", "foreign_net": "+1,234억원"},
+      {"rank": 2, "name": "SK하이닉스",    "ticker": "000660", "foreign_net": "+456억원"}
+    ],
+    "top_sells": [
+      {"rank": 1, "name": "LG에너지솔루션","ticker": "373220", "foreign_net": "-567억원"},
+      {"rank": 2, "name": "현대차",        "ticker": "005380", "foreign_net": "-234억원"}
+    ]
+  },
+  "sentiment": [
+    {"name": "VIX (공포지수)",    "value": "18.5",  "change": "-1.2",   "change_pct": "-6.1%",  "signal": "안정"},
+    {"name": "美 10년 국채금리",  "value": "4.35%", "change": "+0.05%", "change_pct": "",        "signal": "주의"},
+    {"name": "WTI 유가",          "value": "$85.2", "change": "+$1.5",  "change_pct": "+1.8%",  "signal": "주의"},
+    {"name": "금(Gold)",          "value": "$2,320","change": "+$15",   "change_pct": "+0.7%",  "signal": "안전"},
+    {"name": "비트코인(BTC)",     "value": "$68,500","change": "+$1,200","change_pct": "+1.8%", "signal": "위험"}
   ],
   "kr_sectors": [
     {"name": "반도체", "change_pct": "+1.23%"},

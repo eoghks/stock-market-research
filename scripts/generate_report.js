@@ -86,6 +86,8 @@ const co_summary        = raw.company_overall_summary || '';
 const macro_headlines   = raw.macro_headlines   || [];
 const kr_sectors        = raw.kr_sectors        || [];
 const us_sectors        = raw.us_sectors        || [];
+const flow_data         = raw.flow_data         || {};   // Phase 11: 수급
+const sentiment         = raw.sentiment         || [];   // Phase 12: 심리 패널
 
 // ── 디자인 토큰 ──────────────────────────────────────────────────────────────
 const COLORS = {
@@ -564,6 +566,129 @@ function companyCard(c, idx) {
   ];
 }
 
+// ── 수급 동향 헬퍼 (Phase 11) ────────────────────────────────────────────────
+function flowTable(flowData) {
+  if (!flowData || (!flowData.kospi && !flowData.kosdaq)) return null;
+
+  // 주체별 3색 요약 표 (코스피·코스닥)
+  const mkts = [
+    { label: '코스피', data: flowData.kospi  || {} },
+    { label: '코스닥', data: flowData.kosdaq || {} },
+  ];
+  const cols = [1560, 1800, 1800, 1800, 2400];
+  const flowSummary = new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: cols,
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        hCell('시장',   cols[0]), hCell('🌏 외국인 순매수', cols[1]),
+        hCell('🏢 기관 순매수', cols[2]), hCell('👤 개인 순매수', cols[3]),
+        hCell('해석', cols[4]),
+      ]}),
+      ...mkts.map((m, i) => {
+        const bg  = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+        const fgn = m.data.foreign     || '-';
+        const ins = m.data.institution || '-';
+        const ret = m.data.retail      || '-';
+        const interp = (() => {
+          const fPos = String(fgn).startsWith('+');
+          const fNeg = String(fgn).startsWith('-');
+          if (fPos) return '외국인 매수 우위 → 지수 지지 가능성';
+          if (fNeg) return '외국인 매도 우위 → 하방 압력 주의';
+          return '수급 중립';
+        })();
+        return new TableRow({ children: [
+          dCell(m.label, cols[0], { bold: true, bg }),
+          chgCell(fgn, cols[1], bg),
+          chgCell(ins, cols[2], bg),
+          chgCell(ret, cols[3], bg),
+          dCell(interp, cols[4], { bg, align: AlignmentType.LEFT }),
+        ]});
+      }),
+    ],
+  });
+
+  const result = [flowSummary];
+
+  // 외국인 순매수 상위/하위 종목
+  const topBuys  = flowData.top_buys  || [];
+  const topSells = flowData.top_sells || [];
+  if (topBuys.length > 0 || topSells.length > 0) {
+    const rankCols = [520, 2200, 1400, 2620, 2620];
+    result.push(sp(160));
+    result.push(new Table({
+      width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: rankCols,
+      rows: [
+        new TableRow({ tableHeader: true, children: [
+          hCell('순위', rankCols[0]), hCell('종목명', rankCols[1]),
+          hCell('코드', rankCols[2]),
+          hCell('🌏 외국인 순매수 상위 (유입↑)', rankCols[3]),
+          hCell('🌏 외국인 순매도 상위 (유출↓)', rankCols[4]),
+        ]}),
+        ...[0,1,2,3,4].map(idx => {
+          const bg  = idx % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+          const buy  = topBuys[idx]  || {};
+          const sell = topSells[idx] || {};
+          return new TableRow({ children: [
+            dCell(String(idx + 1), rankCols[0], { bold: true, bg }),
+            dCell(buy.name  || '-', rankCols[1], { bg, align: AlignmentType.LEFT }),
+            dCell(buy.ticker || '-', rankCols[2], { bg }),
+            chgCell(buy.foreign_net  || '-', rankCols[3], bg),
+            chgCell(sell.foreign_net || '-', rankCols[4], bg),
+          ]});
+        }),
+      ],
+    }));
+  }
+  return result;
+}
+
+// ── 시장 심리 패널 헬퍼 (Phase 12) ──────────────────────────────────────────
+const SIGNAL_COLOR = { '안정': '2E7D32', '주의': 'ED7D31', '위험': 'C00000', '안전': '1F4E79' };
+const SIGNAL_BG    = { '안정': 'F1F8E9', '주의': 'FFF8E1', '위험': 'FFF3F3', '안전': 'E8F0FE' };
+
+function sentimentTable(sentimentData) {
+  if (!sentimentData || sentimentData.length === 0) return null;
+  const cols = [2200, 1400, 1400, 1400, 3360];
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: cols,
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        hCell('지표', cols[0]), hCell('현재값', cols[1]),
+        hCell('전일비', cols[2]), hCell('신호', cols[3]),
+        hCell('투자자 시사점', cols[4]),
+      ]}),
+      ...sentimentData.map((s, i) => {
+        const bg       = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+        const sigColor = SIGNAL_COLOR[s.signal] || COLORS.neutral;
+        const sigBg    = SIGNAL_BG[s.signal]    || bg;
+        const hint = (() => {
+          const n = s.name || '';
+          if (n.includes('VIX'))   return s.signal === '안정' ? '투자 심리 안정 — 위험자산 선호 가능' : '공포 지수 상승 — 변동성 주의';
+          if (n.includes('금리'))  return s.signal === '주의' ? '금리 상승 → 성장주 밸류에이션 압박' : '금리 안정 — 주식 친화적';
+          if (n.includes('WTI'))   return s.signal === '주의' ? '유가 상승 → 수입 비용 증가, 원화 약세 압력' : '유가 안정';
+          if (n.includes('금('))   return '안전자산 수요 → 불확실성 반영';
+          if (n.includes('비트'))  return '위험자산 선호도 바로미터';
+          return '-';
+        })();
+        return new TableRow({ children: [
+          dCell(s.name || '-', cols[0], { bold: true, bg, align: AlignmentType.LEFT }),
+          dCell(s.value || '-', cols[1], { bold: true, bg }),
+          chgCell(s.change || '-', cols[2], bg),
+          new TableCell({
+            borders: bdrs, width: { size: cols[3], type: WidthType.DXA },
+            shading: { fill: sigBg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({ alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: s.signal || '-', size: 18, bold: true, color: sigColor, font: 'Arial' })] })],
+          }),
+          dCell(hint, cols[4], { bg, align: AlignmentType.LEFT }),
+        ]});
+      }),
+    ],
+  });
+}
+
 // ── 거시 뉴스 헬퍼 ───────────────────────────────────────────────────────────
 const IMPORTANCE_COLOR = { high: 'C00000', medium: 'ED7D31', low: '595959' };
 const IMPORTANCE_LABEL = { high: '🔴 높음', medium: '🟡 보통', low: '⚪ 낮음' };
@@ -855,6 +980,23 @@ function chartImage(imagePath) {
             { color: '999999', size: 18 })]),
       new Paragraph({ children:[new PageBreak()] }),
 
+      // ── 0-A. 시장 심리 패널 ────────────────────────────────────────────────
+      new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('0-A. 시장 심리 패널')] }),
+      sectionSummary(sentiment.length > 0
+        ? `VIX·금리·유가·금·비트코인 ${sentiment.length}개 지표 수집  |  ${BASE_DATE} 기준`
+        : '시장 심리 지표 없음 — 크롤링 재실행 필요'),
+      sp(120),
+      ...(sentiment.length > 0
+        ? [
+            infoBox('시장 심리 패널이란?',
+              'VIX(공포지수)·금리·유가·금·비트코인은 주식 시장 외부의 핵심 온도계입니다. 이 지표들이 주식 방향성을 선행하는 경우가 많습니다. "신호" 열을 먼저 확인하세요.'),
+            sp(120),
+            sentimentTable(sentiment),
+          ]
+        : [body('(시장 심리 데이터가 없습니다. 크롤링 에이전트가 VIX·국채금리·WTI·금·비트코인을 수집해야 합니다.)',
+            { color: '999999', size: 18 })]),
+      new Paragraph({ children:[new PageBreak()] }),
+
       // ── 1. 한국 증시 ───────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('1. 한국 증시')] }),
       sectionSummary((() => {
@@ -879,9 +1021,20 @@ function chartImage(imagePath) {
       ] : []),
       new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-4. 주요 이슈')] }),
       ...finalKrIssues.map(t => bullet(t)),
+      ...(() => {
+        const ft = flowTable(flow_data);
+        if (!ft) return [];
+        return [
+          sp(200),
+          new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-5. 수급 동향 (외국인·기관·개인)')] }),
+          infoBox('수급이란?', '주식 시장에서 누가 사고 팔고 있는지를 나타냅니다. 외국인이 대량 매수하면 지수가 오르는 경우가 많습니다. 외국인 순매수 상위 종목은 단기 모멘텀 시그널로 활용됩니다.'),
+          sp(120),
+          ...(Array.isArray(ft) ? ft : [ft]),
+        ];
+      })(),
       ...(krHeatmapPath ? [
         sp(200),
-        new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-5. 섹터별 등락률 히트맵')] }),
+        new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('1-6. 섹터별 등락률 히트맵')] }),
         body('업종별 자금 흐름을 한눈에 확인하세요. 진초록=강한 상승 / 연초록=소폭 상승 / 연빨강=소폭 하락 / 진빨강=강한 하락', { color:'595959', size:18 }),
         sp(80),
         heatmapImage(krHeatmapPath),
