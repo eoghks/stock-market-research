@@ -657,6 +657,141 @@ function companyCard(c, idx) {
   ];
 }
 
+// ── 투자 신호 대시보드 (v2.3.0) ──────────────────────────────────────────────
+function signalDashboard() {
+  const ICON = { green: '🟢', yellow: '🟡', red: '🔴' };
+  const LABEL = { green: '매수 유리', yellow: '중립·관망', red: '매도 유의' };
+  const ACTION = {
+    green:  '신규 매수 진입 검토 — 분할 매수로 리스크 관리',
+    yellow: '현금 비중 유지 / 보유 종목 손절선 재점검',
+    red:    '신규 매수 보류 / 보유 비중 축소 고려',
+  };
+  const BG_OVERALL = { green: 'E8F5E9', yellow: 'FFFDE7', red: 'FFEBEE' };
+  const BG_ROW     = { green: 'F1F8E9', yellow: 'FFFDE7', red: 'FFF3F3' };
+  const COL_ACC    = { green: '2E7D32', yellow: '7B6000', red: 'B71C1C' };
+
+  const os  = _SEC_SIGNAL.overall;
+  const oIcon  = ICON[os]  || '🟡';
+  const oLabel = LABEL[os] || '중립·관망';
+  const oAccent = COL_ACC[os] || '7B6000';
+  const oBg    = BG_OVERALL[os] || 'FFFDE7';
+
+  // ① 종합 신호 배너
+  const banner = new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: [FULL_WIDTH],
+    rows: [new TableRow({ children: [new TableCell({
+      borders: {
+        top:    { style: BorderStyle.SINGLE, size: 8,  color: oAccent },
+        bottom: { style: BorderStyle.SINGLE, size: 8,  color: oAccent },
+        left:   { style: BorderStyle.SINGLE, size: 24, color: oAccent },
+        right:  { style: BorderStyle.SINGLE, size: 8,  color: oAccent },
+      },
+      shading: { fill: oBg, type: ShadingType.CLEAR },
+      margins: { top: 200, bottom: 200, left: 360, right: 360 },
+      children: [
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before:0, after:80 }, children: [
+          new TextRun({ text: `${oIcon}  오늘의 종합 투자 신호: ${oLabel}`, bold: true, size: 32, font: 'Arial', color: oAccent }),
+        ]}),
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before:0, after:0 }, children: [
+          new TextRun({ text: `→ ${ACTION[os]||ACTION.yellow}`, size: 22, font: 'Arial', color: oAccent, bold: true }),
+        ]}),
+      ],
+    })]})],
+  });
+
+  // ② 5개 지표 상세 테이블
+  const indicators = [
+    {
+      name:   'VIX (공포지수)',
+      sig:    _SEC_SIGNAL.vixSig,
+      val:    (() => { const v = sentiment.find(s=>(s.name||'').includes('VIX')); return v ? `${v.value} (${v.change})` : '-'; })(),
+      green:  'VIX < 18  →  공포 없음, 위험자산 선호',
+      yellow: 'VIX 18~25  →  주의 구간, 변동성 확대 가능',
+      red:    'VIX > 25  →  공포 상승, 안전자산 비중 확대',
+    },
+    {
+      name:   '외국인 코스피 수급',
+      sig:    _SEC_SIGNAL.flowSig,
+      val:    (flow_data.kospi||{}).foreign || '-',
+      green:  '외국인 순매수  →  지수 지지, 추세 상승 가능',
+      yellow: '수급 미수집 / 혼조  →  방향성 불명확',
+      red:    '외국인 순매도  →  하방 압력, 추세 확인 필요',
+    },
+    {
+      name:   'USD/KRW 환율',
+      sig:    _SEC_SIGNAL.fxSig,
+      val:    (() => { const r = fx_rates.find(f=>f.pair==='USD/KRW'); return r ? `${r.rate}원 (${r.change_pct})` : '-'; })(),
+      green:  '1,350원 미만  →  원화 강세, 수입 부담 낮음',
+      yellow: '1,350~1,430원  →  주의 구간',
+      red:    '1,430원 초과  →  원화 약세 고점, 수입·에너지주 부담',
+    },
+    {
+      name:   '美 10년 국채금리',
+      sig:    _SEC_SIGNAL.bondSig,
+      val:    (() => { const b = sentiment.find(s=>(s.name||'').includes('국채')); return b ? b.value : '-'; })(),
+      green:  '4.0% 미만  →  금리 완화, 성장주 우호적',
+      yellow: '4.0~4.5%  →  금리 부담 중간 수준',
+      red:    '4.5% 초과  →  고금리 지속, 성장주 밸류에이션 압박',
+    },
+    {
+      name:   '코스피 방향',
+      sig:    _SEC_SIGNAL.kospiSig,
+      val:    (() => { const k = kr_indices.find(r=>(r.name||'').includes('코스피')); return k ? `${k.value} (${k.change_pct})` : '-'; })(),
+      green:  '상승 마감  →  단기 추세 상승, 모멘텀 유지',
+      yellow: '보합  →  방향성 탐색 중',
+      red:    '하락 마감  →  단기 추세 하락, 반등 확인 후 진입',
+    },
+  ];
+
+  const cols = [2400, 1400, 5560];
+  const detailTable = new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: cols,
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        hCell('지표',        cols[0]),
+        hCell('현재 신호',   cols[1]),
+        hCell('투자 시사점', cols[2]),
+      ]}),
+      ...indicators.map((ind, i) => {
+        const bg  = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+        const sigBg  = BG_ROW[ind.sig]  || bg;
+        const sigAcc = COL_ACC[ind.sig] || COLORS.neutral;
+        const hint = ind[ind.sig] || ind.yellow;
+        return new TableRow({ children: [
+          dCell(ind.name, cols[0], { bold: true, bg, align: AlignmentType.LEFT }),
+          new TableCell({
+            borders: bdrs, width: { size: cols[1], type: WidthType.DXA },
+            shading: { fill: sigBg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [
+              new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before:0, after:30 }, children: [
+                new TextRun({ text: ICON[ind.sig]||'🟡', size: 22, font: 'Arial' }),
+              ]}),
+              new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before:0, after:0 }, children: [
+                new TextRun({ text: ind.val, size: 16, font: 'Arial', color: sigAcc, bold: true }),
+              ]}),
+            ],
+          }),
+          dCell(hint, cols[2], { bg, align: AlignmentType.LEFT }),
+        ]});
+      }),
+    ],
+  });
+
+  return [
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('📊 오늘의 투자 신호 대시보드')] }),
+    sp(120),
+    banner,
+    sp(200),
+    detailTable,
+    sp(200),
+    infoBox('이 대시보드 사용법',
+      '5개 지표가 모두 🟢이면 적극 매수, 🔴가 3개 이상이면 신규 진입 자제. 혼조(🟢+🔴 섞임)일 때는 분할 매수로 리스크를 낮추세요. 각 섹션의 신호 헤더도 함께 확인하면 더 구체적인 판단이 가능합니다.'),
+    new Paragraph({ children: [new PageBreak()] }),
+  ];
+}
+
 // ── AI 인사이트 박스 (Phase 15) ──────────────────────────────────────────────
 function insightBox(insights) {
   if (!insights || insights.length === 0) return null;
@@ -1173,6 +1308,9 @@ function chartImage(imagePath) {
           new Paragraph({ children:[new PageBreak()] }),
         ];
       })(),
+
+      // ── 투자 신호 대시보드 (v2.3.0) ───────────────────────────────────────
+      ...signalDashboard(),
 
       // ── 0. 글로벌 거시 정세 ────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('0. 글로벌 거시 정세')] }),
