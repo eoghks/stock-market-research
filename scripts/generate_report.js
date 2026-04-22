@@ -88,6 +88,9 @@ const kr_sectors        = raw.kr_sectors        || [];
 const us_sectors        = raw.us_sectors        || [];
 const flow_data         = raw.flow_data         || {};   // Phase 11: 수급
 const sentiment         = raw.sentiment         || [];   // Phase 12: 심리 패널
+const event_calendar    = raw.event_calendar    || [];   // Phase 13: 이벤트 캘린더
+const watchlist         = raw.watchlist         || {};   // Phase 14: 워치리스트
+const daily_insight     = raw.daily_insight     || [];   // Phase 15: AI 인사이트 3줄
 
 // ── 디자인 토큰 ──────────────────────────────────────────────────────────────
 const COLORS = {
@@ -566,6 +569,111 @@ function companyCard(c, idx) {
   ];
 }
 
+// ── AI 인사이트 박스 (Phase 15) ──────────────────────────────────────────────
+function insightBox(insights) {
+  if (!insights || insights.length === 0) return null;
+  const lines = insights.slice(0, 3);
+  const ICONS = ['①', '②', '③'];
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: [FULL_WIDTH],
+    rows: [new TableRow({ children: [new TableCell({
+      borders: {
+        top:    { style: BorderStyle.SINGLE, size: 8,  color: COLORS.primary },
+        bottom: { style: BorderStyle.SINGLE, size: 8,  color: COLORS.primary },
+        left:   { style: BorderStyle.SINGLE, size: 20, color: COLORS.primary },
+        right:  { style: BorderStyle.SINGLE, size: 8,  color: COLORS.primary },
+      },
+      width: { size: FULL_WIDTH, type: WidthType.DXA },
+      shading: { fill: 'EBF3FF', type: ShadingType.CLEAR },
+      margins: { top: 160, bottom: 160, left: 300, right: 300 },
+      children: [
+        new Paragraph({ spacing: { before: 0, after: 100 }, children: [
+          new TextRun({ text: '🤖 오늘의 핵심 인사이트', bold: true, size: 22, font: 'Arial', color: COLORS.primary }),
+        ]}),
+        ...lines.map((txt, i) => new Paragraph({
+          spacing: { before: 60, after: 60 },
+          children: [
+            new TextRun({ text: `${ICONS[i]}  `, bold: true, size: 20, font: 'Arial', color: COLORS.primary }),
+            new TextRun({ text: txt, size: 20, font: 'Arial', color: COLORS.text }),
+          ],
+        })),
+      ],
+    })]})],
+  });
+}
+
+// ── 이벤트 캘린더 헬퍼 (Phase 13) ────────────────────────────────────────────
+const IMPACT_COLOR = { '높음': 'C00000', '보통': 'ED7D31', '낮음': '595959' };
+
+function calendarTable(events) {
+  if (!events || events.length === 0) return null;
+  const cols = [1200, 760, 2600, 2200, 2600];
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: cols,
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        hCell('날짜',    cols[0]), hCell('지역', cols[1]),
+        hCell('이벤트', cols[2]), hCell('시장 영향도', cols[3]),
+        hCell('주목 이유', cols[4]),
+      ]}),
+      ...events.map((ev, i) => {
+        const bg  = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+        const imc = IMPACT_COLOR[ev.impact] || COLORS.neutral;
+        return new TableRow({ children: [
+          dCell(ev.date   || '-', cols[0], { bold: true, bg }),
+          dCell(ev.region || '-', cols[1], { bg }),
+          dCell(ev.event  || '-', cols[2], { bg, align: AlignmentType.LEFT }),
+          new TableCell({
+            borders: bdrs, width: { size: cols[3], type: WidthType.DXA },
+            shading: { fill: bg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            verticalAlign: VerticalAlign.CENTER,
+            children: [new Paragraph({ alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: ev.impact || '-', size: 18, bold: true, color: imc, font: 'Arial' })] })],
+          }),
+          dCell(ev.note || '-', cols[4], { bg, align: AlignmentType.LEFT }),
+        ]});
+      }),
+    ],
+  });
+}
+
+// ── 워치리스트 헬퍼 (Phase 14) ────────────────────────────────────────────────
+function watchlistTable(stocks, region) {
+  if (!stocks || stocks.length === 0) return null;
+  const cols = [400, 1600, 1000, 1000, 5360]; // #, 종목명, 현재가, 등락률, 주목이유
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: cols,
+    rows: [
+      new TableRow({ tableHeader: true, children: [
+        hCell('#',        cols[0]), hCell('종목명',  cols[1]),
+        hCell('현재가',   cols[2]), hCell('등락률',  cols[3]),
+        hCell('주목 이유 & 관련 뉴스', cols[4]),
+      ]}),
+      ...stocks.map((s, i) => {
+        const bg = i % 2 === 0 ? COLORS.bg_stripe : COLORS.bg_white;
+        const noteW = cols[4];
+        const noteText = [s.reason, s.news_title].filter(Boolean).join('  |  뉴스: ');
+        return new TableRow({ children: [
+          dCell(String(i + 1),   cols[0], { bold: true, bg }),
+          dCell(s.name || '-',   cols[1], { bold: true, bg, align: AlignmentType.LEFT }),
+          dCell(s.price || '-',  cols[2], { bg }),
+          chgCell(s.change_pct || '-', cols[3], bg),
+          new TableCell({
+            borders: bdrs, width: { size: noteW, type: WidthType.DXA },
+            shading: { fill: bg, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 160, right: 160 },
+            verticalAlign: VerticalAlign.TOP,
+            children: [new Paragraph({ children: [
+              new TextRun({ text: noteText || '-', size: 18, font: 'Arial', color: COLORS.text }),
+            ]})],
+          }),
+        ]});
+      }),
+    ],
+  });
+}
+
 // ── 수급 동향 헬퍼 (Phase 11) ────────────────────────────────────────────────
 function flowTable(flowData) {
   if (!flowData || (!flowData.kospi && !flowData.kosdaq)) return null;
@@ -958,6 +1066,17 @@ function chartImage(imagePath) {
       new TableOfContents('목차', { hyperlink:true, headingStyleRange:'1-2' }),
       new Paragraph({ children:[new PageBreak()] }),
 
+      // ── AI 데일리 인사이트 (표지 다음 페이지) ─────────────────────────────
+      ...(() => {
+        const box = insightBox(daily_insight);
+        if (!box) return [];
+        return [
+          box,
+          sp(200),
+          new Paragraph({ children:[new PageBreak()] }),
+        ];
+      })(),
+
       // ── 0. 글로벌 거시 정세 ────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('0. 글로벌 거시 정세')] }),
       (() => {
@@ -1134,17 +1253,57 @@ function chartImage(imagePath) {
       ...companyNewsList(us_top10, false),
       new Paragraph({ children:[new PageBreak()] }),
 
-      // ── 8. 종합 결론 ───────────────────────────────────────────────────────
-      new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('8. 종합 결론 및 시사점')] }),
-      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('8-1. 증시·환율·거시경제 핵심 시사점')] }),
+      // ── 8. 주의깊게 볼만한 기업 (워치리스트) ──────────────────────────────
+      ...(() => {
+        const kr = watchlist.kr || [];
+        const us = watchlist.us || [];
+        if (kr.length === 0 && us.length === 0) return [];
+        const blocks = [
+          new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('8. 주의깊게 볼만한 기업')] }),
+          sectionSummary(`오늘 주목할 종목 — 한국 ${kr.length}개 · 미국 ${us.length}개  |  ${BASE_DATE}`),
+          sp(120),
+          infoBox('선정 기준', '거래대금 급증 / 외국인 대량 순매수 / 5% 이상 급등락 / 어닝 서프라이즈 / 거시 뉴스 직접 영향 종목을 자동 선별합니다.'),
+          sp(120),
+        ];
+        if (kr.length > 0) {
+          blocks.push(new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('8-1. 한국 주목 종목')] }));
+          blocks.push(watchlistTable(kr, 'kr'));
+          blocks.push(sp(160));
+        }
+        if (us.length > 0) {
+          blocks.push(new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('8-2. 미국 주목 종목')] }));
+          blocks.push(watchlistTable(us, 'us'));
+        }
+        blocks.push(new Paragraph({ children:[new PageBreak()] }));
+        return blocks;
+      })(),
+
+      // ── 8-A. 이번주 주요 이벤트 캘린더 ──────────────────────────────────
+      ...(() => {
+        const ct = calendarTable(event_calendar);
+        if (!ct) return [];
+        return [
+          new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('8-A. 이번주 주요 이벤트')] }),
+          sectionSummary(`FOMC·CPI·실적발표 등 단기 변동성 이벤트 ${event_calendar.length}건`),
+          sp(120),
+          infoBox('이벤트 캘린더 활용법', '"높음" 등급 이벤트 발표 전후에는 포지션 조정이 필요할 수 있습니다. 시장 영향도가 높은 이벤트일수록 발표 당일 변동성이 커집니다.'),
+          sp(120),
+          ct,
+          new Paragraph({ children:[new PageBreak()] }),
+        ];
+      })(),
+
+      // ── 9. 종합 결론 ───────────────────────────────────────────────────────
+      new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('9. 종합 결론 및 시사점')] }),
+      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('9-1. 증시·환율·거시경제 핵심 시사점')] }),
       ...finalConclusions.map(t => bullet(t)),
       ...(co_summary ? [
         sp(200),
-        new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('8-2. 시총 상위 기업 뉴스 종합 분석')] }),
+        new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('9-2. 시총 상위 기업 뉴스 종합 분석')] }),
         infoBox('양국 시총 상위 기업 뉴스가 말하는 것', co_summary),
       ] : []),
       sp(200),
-      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('8-3. 투자자를 위한 체크리스트')] }),
+      new Paragraph({ heading:HeadingLevel.HEADING_2, children:[new TextRun('9-3. 투자자를 위한 체크리스트')] }),
       bullet('🇰🇷 국내 시총 1위 기업(삼성전자 등) 뉴스가 부정적이면 → 코스피 전반 하락 가능성 주의'),
       bullet('🇺🇸 엔비디아·애플 등 빅테크 뉴스가 긍정적이면 → 다음 날 한국 반도체 섹터 동반 상승 기대'),
       bullet('원화 약세 지속 시 → 수출 기업(IT·자동차) 수혜, 수입 기업·해외여행 비용 증가'),

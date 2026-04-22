@@ -112,7 +112,31 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
     - 비트코인: https://www.hankyung.com/globalmarket
     신호(signal)는 VIX<20→안정, VIX≥25→위험, 금리상승→주의, 유가급등→주의로 판단하세요.
 
-13. 한국·미국 섹터별 등락률 수집 (kr_sectors / us_sectors):
+13. 이벤트 캘린더 수집 (event_calendar):
+    이번주~다음주 아래 이벤트를 수집하세요:
+    - FOMC 회의, 미국 CPI/PPI/고용지표 발표일
+    - 한국 금통위 회의, 한국 경제지표 발표
+    - 주요 기업 실적발표 (삼성전자, SK하이닉스, Apple, NVIDIA 등)
+    출처: https://www.hankyung.com/economy 또는 Investing.com 경제캘린더
+    접근 불가 시 빈 배열([])로 처리하세요.
+
+14. 주목 종목 수집 (watchlist):
+    아래 기준으로 한국 5종목, 미국 5종목을 선별하세요:
+    - 거래대금 급증 (평소 대비 2배 이상)
+    - 외국인 대량 순매수 (수급 동향 기반)
+    - 당일 5% 이상 급등락
+    - 실적 어닝 서프라이즈 발표
+    - 거시 뉴스(금리·지정학)와 직접 연관된 종목
+    각 종목에 "왜 주목해야 하는가" 한 줄 이유와 관련 뉴스 제목을 포함하세요.
+
+15. AI 데일리 인사이트 작성 (daily_insight):
+    수집된 모든 데이터를 종합하여 핵심 3줄을 작성하세요:
+    ① 오늘의 가장 큰 시장 흐름 (한 문장)
+    ② 가장 중요한 변화 또는 리스크 (한 문장)
+    ③ 내일·이번주 주목할 점 (한 문장)
+    반드시 실제 수집 데이터에 근거해 작성하세요. 일반론 금지.
+
+16. 한국·미국 섹터별 등락률 수집 (kr_sectors / us_sectors):
     한국: https://markets.hankyung.com/index-info/industry 에서
     반도체·자동차·금융·바이오·2차전지·게임·조선·건설·통신·철강 업종 등락률 수집.
     미국: https://www.hankyung.com/globalmarket 또는
@@ -227,6 +251,36 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
       "news_summary": "한국 투자자 관점에서 이 뉴스의 의미를 2~3문장으로 한국어로 설명"
     }
   ],
+  "daily_insight": [
+    "오늘 미국 증시는 Fed 금리 동결 기대감으로 S&P500이 1.2% 상승했으나 한국은 외국인 매도로 코스피가 0.5% 하락했습니다.",
+    "원/달러 환율이 1,467원으로 연고점 수준이며, 에너지 수입 의존도가 높은 한국 경제에 물가 상승 압력이 가중되고 있습니다.",
+    "이번 주 목요일 미국 CPI 발표가 핵심 변수 — 예상치(3.2%) 상회 시 금리 인하 기대 후퇴로 나스닥 조정 가능성 주의."
+  ],
+  "event_calendar": [
+    {"date": "04/23 (수)", "region": "미국", "event": "FOMC 의사록 공개",    "impact": "높음", "note": "금리 인하 시점 힌트 여부 주목"},
+    {"date": "04/24 (목)", "region": "미국", "event": "미국 CPI 발표",       "impact": "높음", "note": "예상 3.2% — 상회 시 긴축 우려 재점화"},
+    {"date": "04/25 (금)", "region": "한국", "event": "삼성전자 잠정실적",   "impact": "높음", "note": "반도체 업황 회복 시그널 확인"},
+    {"date": "04/28 (월)", "region": "미국", "event": "NVIDIA 실적발표",     "impact": "높음", "note": "AI 수요 지속 여부 가늠자"},
+    {"date": "04/29 (화)", "region": "한국", "event": "한국 금통위 회의",    "impact": "보통", "note": "기준금리 동결 전망 — 코멘트 주목"}
+  ],
+  "watchlist": {
+    "kr": [
+      {"name": "HD현대중공업", "ticker": "329180", "price": "185,500", "change_pct": "+5.3%",
+       "reason": "조선 수주 급증 — 외국인 대량 매수 유입",
+       "news_title": "HD현대중공업, LNG선 10척 수주 계약 체결"},
+      {"name": "에코프로비엠",  "ticker": "247540", "price": "125,000", "change_pct": "+4.1%",
+       "reason": "2차전지 소재 수출 호조 — 거래대금 급증",
+       "news_title": "에코프로비엠, 미국 GM과 배터리 소재 공급 계약"}
+    ],
+    "us": [
+      {"name": "NVIDIA (NVDA)", "ticker": "NVDA", "price": "$875.40", "change_pct": "+3.2%",
+       "reason": "AI 서버 수요 폭발 — 실적발표 전 기대감",
+       "news_title": "NVIDIA GTC서 Blackwell GPU 양산 일정 확정"},
+      {"name": "ExxonMobil (XOM)", "ticker": "XOM", "price": "$112.30", "change_pct": "+2.8%",
+       "reason": "중동 긴장 고조로 유가 급등 — 에너지주 수혜",
+       "news_title": "WTI 원유 배럴당 90달러 돌파, 호르무즈 긴장"}
+    ]
+  },
   "flow_data": {
     "kospi":  {"foreign": "+1,234억원", "institution": "-567억원", "retail": "-667억원"},
     "kosdaq": {"foreign": "-234억원",  "institution": "+123억원",  "retail": "+111억원"},
