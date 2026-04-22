@@ -99,6 +99,51 @@ const event_calendar    = raw.event_calendar    || [];   // Phase 13: 이벤트 
 const watchlist         = raw.watchlist         || {};   // Phase 14: 워치리스트
 const daily_insight     = raw.daily_insight     || [];   // Phase 15: AI 인사이트 3줄
 
+// ── 섹션 투자 신호 사전 계산 ─────────────────────────────────────────────────
+function _sig(val) {
+  // 숫자 문자열에서 ▲/▼/+/- 제거해 부호 판별
+  const s = String(val || '');
+  if (s.startsWith('+') || s.startsWith('▲')) return 'green';
+  if (s.startsWith('-') || s.startsWith('▼')) return 'red';
+  return 'yellow';
+}
+const _SEC_SIGNAL = (() => {
+  // VIX
+  const vixItem  = sentiment.find(s => (s.name||'').includes('VIX'));
+  const vixNum   = vixItem ? parseFloat(vixItem.value) : NaN;
+  const vixSig   = isNaN(vixNum) ? 'yellow' : vixNum < 18 ? 'green' : vixNum > 25 ? 'red' : 'yellow';
+
+  // 외국인 코스피 수급
+  const flowFgn  = (flow_data.kospi || {}).foreign || '';
+  const flowSig  = flowFgn.startsWith('+') ? 'green' : flowFgn.startsWith('-') ? 'red' : 'yellow';
+
+  // USD/KRW
+  const usdItem  = fx_rates.find(r => r.pair === 'USD/KRW');
+  const usdNum   = usdItem ? parseFloat(String(usdItem.rate).replace(/,/g,'')) : NaN;
+  const fxSig    = isNaN(usdNum) ? 'yellow' : usdNum < 1350 ? 'green' : usdNum > 1430 ? 'red' : 'yellow';
+
+  // 美 10년 국채
+  const bondItem = sentiment.find(s => (s.name||'').includes('국채'));
+  const bondNum  = bondItem ? parseFloat(bondItem.value) : NaN;
+  const bondSig  = isNaN(bondNum) ? 'yellow' : bondNum < 4.0 ? 'green' : bondNum > 4.5 ? 'red' : 'yellow';
+
+  // 코스피 방향
+  const kospiItem = kr_indices.find(r => (r.name||'').includes('코스피'));
+  const kospiSig  = _sig(kospiItem ? kospiItem.change_pct : '');
+
+  // 미국 S&P500 방향
+  const sp500Item = us_indices.find(r => (r.name||'').includes('S&P') || (r.name||'').includes('S&amp;P'));
+  const usSig     = _sig(sp500Item ? sp500Item.change_pct : '');
+
+  // 종합 (5개 지표 중 🟢/🔴 개수)
+  const all   = [vixSig, flowSig, fxSig, bondSig, kospiSig];
+  const green = all.filter(s => s === 'green').length;
+  const red   = all.filter(s => s === 'red').length;
+  const overall = green >= 4 ? 'green' : red >= 3 ? 'red' : 'yellow';
+
+  return { vixSig, flowSig, fxSig, bondSig, kospiSig, usSig, fxSig, overall };
+})();
+
 // ── 디자인 토큰 ──────────────────────────────────────────────────────────────
 const COLORS = {
   primary:     '1F4E79',  // 진파랑 — 헤더, 주색상
@@ -176,6 +221,42 @@ function sectionSummary(text) {
           new TextRun({ text, size: 20, font: 'Arial', color: COLORS.primary, bold: true }),
         ]
       })]
+    })]})],
+  });
+}
+
+// 섹션 상단 신호등 헤더 (🟢🟡🔴 + 한 줄 요약 + 행동 힌트)
+function signalHeader(signal, title, summary, action) {
+  const C = {
+    green:  { bg: 'E8F5E9', border: '4CAF50', accent: '2E7D32', icon: '🟢' },
+    yellow: { bg: 'FFFDE7', border: 'FFC107', accent: '7B6000', icon: '🟡' },
+    red:    { bg: 'FFEBEE', border: 'EF5350', accent: 'B71C1C', icon: '🔴' },
+  };
+  const c = C[signal] || C.yellow;
+  const bdr4 = (color, size=4) => ({ style: BorderStyle.SINGLE, size, color });
+  return new Table({
+    width: { size: FULL_WIDTH, type: WidthType.DXA }, columnWidths: [FULL_WIDTH],
+    rows: [new TableRow({ children: [new TableCell({
+      borders: {
+        top:    bdr4(c.border, 2),
+        bottom: bdr4(c.border, 2),
+        left:   bdr4(c.accent, 16),
+        right:  bdr4(c.border, 2),
+      },
+      width: { size: FULL_WIDTH, type: WidthType.DXA },
+      shading: { fill: c.bg, type: ShadingType.CLEAR },
+      margins: { top: 140, bottom: 140, left: 280, right: 280 },
+      children: [
+        new Paragraph({ spacing: { before: 0, after: 60 }, children: [
+          new TextRun({ text: `${c.icon} ${title}`, bold: true, size: 22, font: 'Arial', color: c.accent }),
+        ]}),
+        new Paragraph({ spacing: { before: 0, after: 60 }, children: [
+          new TextRun({ text: summary, size: 19, font: 'Arial', color: COLORS.text }),
+        ]}),
+        new Paragraph({ spacing: { before: 0, after: 0 }, children: [
+          new TextRun({ text: `→ ${action}`, size: 18, font: 'Arial', color: c.accent, bold: true, italics: true }),
+        ]}),
+      ],
     })]})],
   });
 }
@@ -1117,6 +1198,13 @@ function chartImage(imagePath) {
 
       // ── 0-A. 시장 심리 패널 ────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('0-A. 시장 심리 패널')] }),
+      (() => {
+        const vixItem = sentiment.find(s=>(s.name||'').includes('VIX'));
+        const vixTxt  = vixItem ? `VIX ${vixItem.value} (${vixItem.signal})` : 'VIX 미수집';
+        const sig = _SEC_SIGNAL.vixSig;
+        const actions = { green:'공포 없음 — 위험자산 선호 가능, 변동성 매수 전략 유효', yellow:'중립 — 이벤트 전후 변동성 주의', red:'공포 상승 — 안전자산(금·달러) 비중 확대 고려' };
+        return signalHeader(sig, '시장 심리 패널', vixTxt, actions[sig]||actions.yellow);
+      })(),
       sectionSummary(sentiment.length > 0
         ? `VIX·금리·유가·금·비트코인 ${sentiment.length}개 지표 수집  |  ${BASE_DATE} 기준`
         : '시장 심리 지표 없음 — 크롤링 재실행 필요'),
@@ -1134,6 +1222,15 @@ function chartImage(imagePath) {
 
       // ── 1. 한국 증시 ───────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('1. 한국 증시')] }),
+      (() => {
+        const kospi  = kr_indices.find(r=>r.name&&r.name.includes('코스피'));
+        const flowFgn = (flow_data.kospi||{}).foreign || '';
+        const flowTxt = flowFgn ? `외국인 ${flowFgn}` : '외국인 수급 미수집';
+        const valTxt  = kospi ? `코스피 ${kospi.value} (${kospi.change_pct})` : '코스피 데이터 없음';
+        const sig     = _SEC_SIGNAL.kospiSig;
+        const actions = { green:'상승 추세 확인 — 신규 진입 검토 가능', yellow:'혼조세 — 분할 매수·현금 유지 병행', red:'하락 압력 — 손절선 점검 / 신규 매수 보류' };
+        return signalHeader(sig, '한국 증시', `${valTxt}  |  ${flowTxt}`, actions[sig]||actions.yellow);
+      })(),
       sectionSummary((() => {
         const kospi  = kr_indices.find(r=>r.name&&r.name.includes('코스피'));
         const kosdaq = kr_indices.find(r=>r.name&&r.name.includes('코스닥'));
@@ -1178,6 +1275,14 @@ function chartImage(imagePath) {
 
       // ── 2. 미국 증시 ───────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('2. 미국 증시')] }),
+      (() => {
+        const sp5 = us_indices.find(r=>r.name&&(r.name.includes('S&P')||r.name.includes('S&amp;P')));
+        const nas = us_indices.find(r=>r.name&&r.name.includes('나스닥'));
+        const valTxt = [sp5,nas].filter(Boolean).map(r=>`${r.name} ${r.value}(${r.change_pct})`).join('  |  ') || '미국 지수 데이터 없음';
+        const sig = _SEC_SIGNAL.usSig;
+        const actions = { green:'미국 강세 — 나스닥·반도체 연동 국내주 모멘텀 확인', yellow:'혼조 — 빅테크 개별 뉴스 중심 선별 대응', red:'미국 약세 — 한국 수출주 동반 하락 주의' };
+        return signalHeader(sig, '미국 증시', valTxt, actions[sig]||actions.yellow);
+      })(),
       sectionSummary((() => {
         const dow  = us_indices.find(r=>r.name&&r.name.includes('다우'));
         const sp5  = us_indices.find(r=>r.name&&(r.name.includes('S&P')||r.name.includes('S&amp;P')));
@@ -1210,6 +1315,15 @@ function chartImage(imagePath) {
 
       // ── 4. 환율 ───────────────────────────────────────────────────────────
       new Paragraph({ heading:HeadingLevel.HEADING_1, children:[new TextRun('4. 환율 현황')] }),
+      (() => {
+        const usd = fx_rates.find(r=>r.pair==='USD/KRW');
+        const usdNum = usd ? parseFloat(String(usd.rate).replace(/,/g,'')) : NaN;
+        const lvl = isNaN(usdNum) ? '' : usdNum > 1430 ? ' — 고점 경계권' : usdNum < 1350 ? ' — 안정권' : ' — 주의 구간';
+        const valTxt = usd ? `USD/KRW ${usd.rate}원 (${usd.change_pct})${lvl}` : '환율 데이터 없음';
+        const sig = _SEC_SIGNAL.fxSig;
+        const actions = { green:'원화 강세 — 수입 비용 완화, 외국인 유입 우호적', yellow:'환율 주의 구간 — 수입 기업 비용 부담 점검', red:'원화 약세 고점 — 수입·에너지株 비중 조절, 달러 자산 헷지 고려' };
+        return signalHeader(sig, '환율 현황', valTxt, actions[sig]||actions.yellow);
+      })(),
       sectionSummary((() => {
         const usd = fx_rates.find(r=>r.pair==='USD/KRW');
         return usd

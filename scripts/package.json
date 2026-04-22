@@ -1,6 +1,6 @@
 {
   "name": "stock-market-research-scripts",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "한국·미국 증시 조사 보고서 생성 스크립트",
   "main": "generate_report.js",
   "dependencies": {
