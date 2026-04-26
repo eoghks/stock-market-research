@@ -1,0 +1,21 @@
+{
+  "_comment": "이 파일을 email_config.json 으로 복사한 뒤 실제 SMTP 정보로 수정하세요. email_config.json 은 .gitignore 처리되어 커밋되지 않습니다.",
+  "smtp": {
+    "host": "smtp.naver.com",
+    "port": 465,
+    "secure": true,
+    "auth": {
+      "user": "your_id@naver.com",
+      "pass": "앱비밀번호_16자리"
+    }
+  },
+  "from": "your_id@naver.com",
+  "to": "받을주소@naver.com",
+  "subject_prefix": "[증시 보고서]",
+  "_smtp_presets": {
+    "naver":  { "host": "smtp.naver.com",  "port": 465, "secure": true  },
+    "gmail":  { "host": "smtp.gmail.com",  "port": 465, "secure": true  },
+    "kakao":  { "host": "smtp.kakao.com",  "port": 465, "secure": true  },
+    "daum":   { "host": "smtp.daum.net",   "port": 465, "secure": true  }
+  }
+}

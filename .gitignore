@@ -13,6 +13,10 @@ chrome_data.json
 naver_data.json
 merged_data.json
 
+# Personal config (개인정보 보호 — example 파일만 커밋)
+config/email_config.json
+config/my_portfolio.json
+
 # OS
 .DS_Store
 Thumbs.db

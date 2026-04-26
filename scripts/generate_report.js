@@ -1619,16 +1619,33 @@ function chartImage(imagePath) {
   console.log(`✅ 보고서 저장 완료: ${outputPath}`);
 
   // ── PDF 변환 (LibreOffice headless) ──────────────────────────────
+  let generatedPdfPath = null;
   try {
     const { convertToPdf } = require(path.join(__dirname, 'pdf', 'convert_to_pdf.js'));
     const pdfResult = convertToPdf(outputPath, dir);
     if (pdfResult) {
+      generatedPdfPath = pdfResult;
       console.log(`📄 PDF 생성 완료: ${pdfResult}`);
     } else {
       console.log('ℹ️  PDF 변환 건너뜀 (LibreOffice 미설치). DOCX만 저장됨.');
     }
   } catch (pdfErr) {
     console.warn('⚠️  PDF 변환 모듈 오류 (DOCX는 정상 저장됨):', pdfErr.message);
+  }
+  // ─────────────────────────────────────────────────────────────────
+
+  // ── 이메일 발송 (config/email_config.json 있을 때만) ─────────────
+  const emailConfigPath = path.join(__dirname, '..', 'config', 'email_config.json');
+  if (fs.existsSync(emailConfigPath) && generatedPdfPath) {
+    try {
+      const { sendReport } = require(path.join(__dirname, 'email', 'send_report.js'));
+      const result = await sendReport(generatedPdfPath, outputPath);
+      console.log(`📧 이메일 발송 완료 → ${result.to} | 제목: ${result.subject}`);
+    } catch (mailErr) {
+      console.warn('⚠️  이메일 발송 실패 (보고서는 정상 저장됨):', mailErr.message);
+    }
+  } else if (fs.existsSync(emailConfigPath) && !generatedPdfPath) {
+    console.log('ℹ️  PDF 없음 — 이메일 발송 건너뜀 (LibreOffice 설치 필요).');
   }
   // ─────────────────────────────────────────────────────────────────
 
