@@ -24,8 +24,8 @@ const fs = require('fs');
 // LibreOffice 실행 파일 경로 탐색
 // ─────────────────────────────────────────────
 function findSoffice() {
-  const candidates = [
-    'soffice',                                                      // PATH에 등록된 경우
+  // 절대 경로는 파일 존재 여부로 확인 (spawnSync --version이 느릴 수 있음)
+  const fileCandidates = [
     'C:/Program Files/LibreOffice/program/soffice.exe',             // Windows 기본 설치
     'C:/Program Files (x86)/LibreOffice/program/soffice.exe',      // 32bit Windows
     '/usr/bin/soffice',                                             // Linux
@@ -33,14 +33,16 @@ function findSoffice() {
     '/Applications/LibreOffice.app/Contents/MacOS/soffice',        // macOS
   ];
 
-  for (const candidate of candidates) {
-    try {
-      const result = spawnSync(candidate, ['--version'], { timeout: 5000 });
-      if (result.status === 0) return candidate;
-    } catch (_) {
-      // 다음 후보 시도
-    }
+  for (const p of fileCandidates) {
+    if (fs.existsSync(p)) return p;
   }
+
+  // PATH에서 탐색 (환경 변수에 등록된 경우)
+  try {
+    const result = spawnSync('soffice', ['--version'], { timeout: 8000 });
+    if (result.status === 0) return 'soffice';
+  } catch (_) { /* skip */ }
+
   return null;
 }
 
