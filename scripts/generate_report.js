@@ -1634,15 +1634,29 @@ function chartImage(imagePath) {
   }
   // ─────────────────────────────────────────────────────────────────
 
-  // ── 이메일 발송 (config/email_config.json 있을 때만) ─────────────
+  // ── 이메일 발송 + 파일 정리 (config/email_config.json 있을 때만) ──
   const emailConfigPath = path.join(__dirname, '..', 'config', 'email_config.json');
   if (fs.existsSync(emailConfigPath) && generatedPdfPath) {
     try {
       const { sendReport } = require(path.join(__dirname, 'email', 'send_report.js'));
       const result = await sendReport(generatedPdfPath, outputPath);
       console.log(`📧 이메일 발송 완료 → ${result.to} | 제목: ${result.subject}`);
+
+      // 발송 성공 후 로컬 파일 삭제 (이미 메일로 받았으므로)
+      try {
+        if (fs.existsSync(generatedPdfPath)) {
+          fs.unlinkSync(generatedPdfPath);
+          console.log(`🗑️  PDF 삭제: ${path.basename(generatedPdfPath)}`);
+        }
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+          console.log(`🗑️  DOCX 삭제: ${path.basename(outputPath)}`);
+        }
+      } catch (delErr) {
+        console.warn('⚠️  파일 삭제 실패 (발송은 완료됨):', delErr.message);
+      }
     } catch (mailErr) {
-      console.warn('⚠️  이메일 발송 실패 (보고서는 정상 저장됨):', mailErr.message);
+      console.warn('⚠️  이메일 발송 실패 — 로컬 파일은 유지됩니다:', mailErr.message);
     }
   } else if (fs.existsSync(emailConfigPath) && !generatedPdfPath) {
     console.log('ℹ️  PDF 없음 — 이메일 발송 건너뜀 (LibreOffice 설치 필요).');
