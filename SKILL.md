@@ -1,18 +1,19 @@
 ---
 name: stock-market-research
-description: 한국·미국 증시를 자동 조사하고 상세 Word 보고서를 생성하는 스킬. "증시 조사해줘", "오늘 코스피 어때", "미국 증시 분석", "시황 보고서 만들어줘", "주식 시장 리포트", "한국/미국 주식 현황", "나스닥 오늘 얼마야", "환율이랑 증시 같이 조사해줘" 같은 요청이 오면 반드시 이 스킬을 사용하세요. Claude in Chrome으로 한국경제신문·매일경제를 크롤링하는 서브에이전트와, 네이버 MCP 서브에이전트를 병렬로 실행하여 실시간 시세·환율·거시경제 지표를 수집합니다. 수집된 데이터로 날짜·시간이 포함된 .docx 보고서를 저장하고, 카카오톡 MCP가 활성화되어 있으면 요약 메시지도 발송합니다.
+description: 한국·미국 증시를 자동 조사하고 상세 Word 보고서를 생성하는 스킬. "증시 조사해줘", "오늘 코스피 어때", "미국 증시 분석", "시황 보고서 만들어줘", "주식 시장 리포트", "한국/미국 주식 현황", "나스닥 오늘 얼마야", "환율이랑 증시 같이 조사해줘" 같은 요청이 오면 반드시 이 스킬을 사용하세요. Yahoo Finance API + WebFetch로 브라우저 없이 실시간 시세·환율·거시경제 지표를 수집하는 서브에이전트와, 네이버 MCP 서브에이전트를 병렬로 실행합니다. 수집된 데이터로 날짜·시간이 포함된 .docx 보고서를 저장하고, 카카오톡 MCP가 활성화되어 있으면 요약 메시지도 발송합니다.
 ---
 
-# 📈 증시 조사 보고서 자동 생성 스킬 (v2.3.0)
+# 📈 증시 조사 보고서 자동 생성 스킬 (v2.4.0)
 
 ## 전체 아키텍처
 
 ```
 [사용자 요청]
       │
-      ├──▶ 서브에이전트 A: Claude in Chrome 크롤링 ──────┐
-      │    (한국경제신문, 매일경제, 데이터센터,             │
-      │     한국·미국 시총 10위 기업 뉴스)                ├──▶ 데이터 통합 ──▶ DOCX 생성 ──▶ [카톡 발송]
+      ├──▶ 서브에이전트 A: Yahoo Finance API + WebFetch ─┐
+      │    (지수·환율·심리지표: API 배치 호출             │
+      │     뉴스·섹터·이벤트: WebFetch/WebSearch)        ├──▶ 데이터 통합 ──▶ DOCX 생성 ──▶ [카톡 발송]
+      │    브라우저 불필요, 사용자 화면 건드리지 않음       │
       │                                                  │
       └──▶ 서브에이전트 B: 네이버 MCP (있으면 수집/없으면 skip) ┘
 ```
@@ -36,16 +37,15 @@ echo "작업 디렉토리: $WORK_DIR"
 
 ## Step 1: 병렬 서브에이전트 실행 (반드시 동시에 호출)
 
-### 서브에이전트 A 태스크 — Claude in Chrome 크롤링
+### 서브에이전트 A 태스크 — WebFetch + Yahoo Finance API
 
-아래 내용을 그대로 Agent() prompt로 전달하세요 (`{WORK_DIR}` 는 실제 경로로 치환):
+아래 내용을 그대로 Agent() prompt로 전달하세요 (`{WORK_DIR}` 는 실제 경로로 치환):  
+**브라우저(Claude in Chrome) 불필요 — WebFetch·WebSearch 도구만 사용합니다.**
 
 ```
 당신은 한국·미국 증시 데이터 수집 에이전트입니다.
-Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_text)를 사용하여
-아래 URL을 순서대로 방문하고 데이터를 수집하세요.
-
-접근이 막힌 사이트(finance.naver.com 등)는 조용히 건너뛰세요.
+**브라우저(Chrome) 불필요** — WebFetch, WebSearch 도구만 사용하세요.
+사용자의 브라우저를 건드리지 않고 백그라운드에서 실행됩니다.
 
 ### ⏰ 시장 세션 날짜 판단 (KST 기준, 반드시 먼저 확인)
 
@@ -63,115 +63,134 @@ Claude in Chrome 도구(tabs_context_mcp, navigate, find, read_page, get_page_te
 - `base_date` 필드에는 **한국 장 기준일**을 기록하세요. (예: "2026년 04월 28일(월)")
 - `us_base_date` 필드에는 **미국 장 기준일(ET)**을 기록하세요. (예: "2026년 04월 25일(금)")
 
-### 수집 URL 목록
+### 1단계: 지수·환율·심리지표·섹터·종목 (Yahoo Finance API)
 
-1. https://www.hankyung.com/koreamarket
-   - 코스피, 코스닥 지수 현재가·등락률
+아래 URL 한 번에 호출하면 모든 숫자 데이터를 JSON으로 받습니다. 인증 불필요.
 
-2. https://markets.hankyung.com/indices/kospi
-   - 코스피 상세: 거래량, 거래대금, 시가, 저가, 외국인 순매수, 52주 최고/최저
+**배치 쿼리 — WebFetch로 한 번에 요청:**
+```
+https://query1.finance.yahoo.com/v7/finance/quote?symbols=^KS11,^KQ11,^GSPC,^IXIC,^DJI,^NDX,^SOX,^VIX,^N225,^HSI,000001.SS,^GDAXI,KRW=X,JPYKRW=X,CNYKRW=X,EURKRW=X,HKDKRW=X,^TNX,GC=F,CL=F,BTC-USD,XLK,XLF,XLE,XLV,XLY,XLI,XLB,XLP,005930.KS,000660.KS,373220.KS,005380.KS,207940.KS,000270.KS,068270.KS,005490.KS,105560.KS,055550.KS,AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,BRK-B,AVGO,JPM
+```
 
-3. https://markets.hankyung.com/indices/kosdaq
-   - 코스닥 상세 지표
+응답 `quoteResponse.result` 배열에서 각 심볼의 주요 필드:
+- `regularMarketPrice`: 현재가
+- `regularMarketChange` / `regularMarketChangePercent`: 전일 대비 변화·등락률
+- `marketCap`: 시가총액
+- `longName` / `shortName`: 종목명
+- `regularMarketVolume`: 거래량
+- `fiftyTwoWeekHigh` / `fiftyTwoWeekLow`: 52주 최고/최저
 
-4. https://www.hankyung.com/globalmarket
-   - 미국 3대 지수(다우, S&P500, 나스닥) 및 주요 뉴스 헤드라인 5개
+**심볼 → 출력 필드 매핑:**
+| 심볼 | 필드 |
+|---|---|
+| `^KS11` | `kr_indices[0]` 코스피 |
+| `^KQ11` | `kr_indices[1]` 코스닥 |
+| `^GSPC` | `us_indices[0]` S&P 500 |
+| `^IXIC` | `us_indices[1]` 나스닥 |
+| `^DJI`  | `us_indices[2]` 다우존스 |
+| `^NDX`  | `us_indices[3]` 나스닥 100 |
+| `^SOX`  | `us_indices[4]` 반도체(SOX) |
+| `^N225` | `global_indices[0]` 닛케이 |
+| `^HSI`  | `global_indices[1]` 항셍 |
+| `000001.SS` | `global_indices[2]` 상해종합 |
+| `^GDAXI` | `global_indices[3]` 독일 DAX |
+| `KRW=X`   | `fx_rates[0]` USD/KRW |
+| `JPYKRW=X` | `fx_rates[1]` JPY/KRW (100엔 기준 계산) |
+| `CNYKRW=X` | `fx_rates[2]` CNY/KRW |
+| `EURKRW=X` | `fx_rates[3]` EUR/KRW |
+| `HKDKRW=X` | `fx_rates[4]` HKD/KRW |
+| `^VIX`  | `sentiment[0]` VIX 공포지수 |
+| `^TNX`  | `sentiment[1]` 美 10년 국채금리 |
+| `CL=F`  | `sentiment[2]` WTI 유가 |
+| `GC=F`  | `sentiment[3]` 금(Gold) |
+| `BTC-USD` | `sentiment[4]` 비트코인 |
+| `XLK~XLP` | `us_sectors` (섹터 ETF 8개) |
+| `005930.KS ~ 055550.KS` | `kr_top10` (한국 시총 10위) |
+| `AAPL ~ JPM` | `us_top10` (미국 시총 10위) |
 
-5. https://datacenter.hankyung.com/major-indices
-   - 전 세계 주요 지수 테이블 (나스닥, 다우, S&P500, 닛케이, 항셍, 상해, 독일DAX 등)
+VIX 신호: VIX < 20 → 안정, VIX 20~25 → 주의, VIX ≥ 25 → 위험.
+금리 상승·유가 급등 시 → 주의 신호 부여.
 
-6. https://datacenter.hankyung.com/currencies
-   - USD/KRW, JPY/KRW, CNY/KRW, EUR/KRW, HKD/KRW 환율
+### 2단계: 뉴스·섹터·수급 (WebFetch + WebSearch)
 
-7. https://datacenter.hankyung.com/indicators
-   - 소비자물가지수(CPI), GDP 성장률, 실업률, 경상수지
+접근이 막힌 URL은 조용히 skip합니다.
 
-8. https://markets.hankyung.com/index-info/marketcap
-   - 코스피 시가총액 상위 기업 목록 수집:
-     1위~10위 기업의 이름, 종목코드, 현재가, 등락률, 시가총액을 가져오세요.
-   - 접근 불가 시 아래 기본 목록 사용:
-     삼성전자(005930), SK하이닉스(000660), LG에너지솔루션(373220),
-     현대차(005380), 삼성바이오로직스(207940), 기아(000270),
-     셀트리온(068270), POSCO홀딩스(005490), KB금융(105560), 신한지주(055550)
+**2-1. 한국 시황 뉴스 (kr_news) — 헤드라인 + 링크:**
+```
+WebFetch: https://www.hankyung.com/koreamarket
+```
+→ 뉴스 헤드라인 5개 + 기사 URL 추출
 
-9. 한국 시총 10위 기업 뉴스 수집:
-   위 8번에서 파악한 각 기업(또는 기본 목록)에 대해:
-   - https://www.hankyung.com/search?query={기업명} 또는
-   - https://markets.hankyung.com/stock/{종목코드} 페이지에서
-   - 각 기업별 최신 뉴스 헤드라인 2~3개를 수집하세요.
-   - 뉴스가 없으면 빈 배열([])로 처리하세요.
-   - 각 기업의 뉴스를 한두 문장으로 요약하고, 투자자 관점에서 의미 해석을 한국어로 작성하세요.
+**2-2. 미국 시황 뉴스 (us_news) — 헤드라인 + 링크:**
+```
+WebFetch: https://www.hankyung.com/globalmarket
+```
+→ 뉴스 헤드라인 5개 + 기사 URL 추출
 
-10. 미국 시총 10위 기업 뉴스 수집:
-    아래 고정 목록에 대해 각 기업의 최신 뉴스를 수집하세요:
-    Apple(AAPL), Microsoft(MSFT), NVIDIA(NVDA), Amazon(AMZN), Alphabet(GOOGL),
-    Meta(META), Tesla(TSLA), Berkshire Hathaway(BRK.B), Broadcom(AVGO), JPMorgan(JPM)
-    
-    수집 방법:
-    - https://www.hankyung.com/search?query={기업명} 검색 페이지에서 뉴스 헤드라인 2~3개 수집
-    - 예: https://www.hankyung.com/search?query=애플 또는 https://www.hankyung.com/search?query=Apple
-    - 각 기업의 뉴스를 한두 문장으로 요약하고, 한국 투자자 관점에서 의미를 한국어로 작성하세요.
+**2-3. 거시 정세 뉴스 (macro_headlines) — 헤드라인 + 링크:**
+```
+WebFetch: https://www.hankyung.com/international
+WebFetch: https://www.hankyung.com/economy
+```
+→ 전쟁·제재·금리·유가·지정학 키워드 관련 뉴스 최대 6개 + URL
+→ 각 뉴스에 category(금리/지정학/에너지/환율/무역/기타)와 importance(high/medium/low) 부여
 
-11. 수급 동향 수집 (flow_data):
-    https://markets.hankyung.com/indices/kospi 또는
-    https://datacenter.hankyung.com/investors 에서
-    코스피·코스닥의 외국인/기관/개인 당일 순매수 금액을 수집하세요.
-    외국인 순매수 상위 5종목 / 순매도 상위 5종목도 함께 수집하세요.
-    접근 불가 시 빈 객체({})로 처리하세요.
+**2-4. 한국 시총 10위 기업 뉴스 (kr_top10[].news):**
+1단계에서 수집한 각 한국 기업에 대해 WebSearch:
+```
+WebSearch: "{기업명} 주식 뉴스 오늘"
+```
+→ 기업별 헤드라인 2~3개 + URL. 없으면 빈 배열([]).
+→ 뉴스를 한두 문장 요약 + 투자자 관점 해석(한국어) → `news_summary` 필드
 
-12. 시장 심리 지표 수집 (sentiment):
-    아래 5개 지표를 수집하세요. 접근 불가 시 해당 항목 제외.
-    - VIX(공포지수): https://www.hankyung.com/globalmarket 또는 Yahoo Finance
-    - 美 10년 국채금리: https://datacenter.hankyung.com/major-indices
-    - WTI 유가: https://datacenter.hankyung.com/major-indices 또는 hankyung 원자재 섹션
-    - 금(Gold): 동일 소스
-    - 비트코인: https://www.hankyung.com/globalmarket
-    신호(signal)는 VIX<20→안정, VIX≥25→위험, 금리상승→주의, 유가급등→주의로 판단하세요.
+**2-5. 미국 시총 10위 기업 뉴스 (us_top10[].news):**
+```
+WebSearch: "{company name} stock news today"
+```
+→ 기업별 헤드라인 2~3개 + URL. 없으면 빈 배열([]).
+→ 한국 투자자 관점 요약(한국어) → `news_summary` 필드
 
-13. 이벤트 캘린더 수집 (event_calendar):
-    이번주~다음주 아래 이벤트를 수집하세요:
-    - FOMC 회의, 미국 CPI/PPI/고용지표 발표일
-    - 한국 금통위 회의, 한국 경제지표 발표
-    - 주요 기업 실적발표 (삼성전자, SK하이닉스, Apple, NVIDIA 등)
-    출처: https://www.hankyung.com/economy 또는 Investing.com 경제캘린더
-    접근 불가 시 빈 배열([])로 처리하세요.
+**2-6. 한국 섹터 등락률 (kr_sectors):**
+```
+WebFetch: https://markets.hankyung.com/index-info/industry
+```
+→ 반도체·자동차·금융·바이오·2차전지·게임·조선·건설·통신·철강 등락률
+→ 접근 불가 시 빈 배열([])
 
-14. 주목 종목 수집 (watchlist):
-    아래 기준으로 한국 5종목, 미국 5종목을 선별하세요:
-    - 거래대금 급증 (평소 대비 2배 이상)
-    - 외국인 대량 순매수 (수급 동향 기반)
-    - 당일 5% 이상 급등락
-    - 실적 어닝 서프라이즈 발표
-    - 거시 뉴스(금리·지정학)와 직접 연관된 종목
-    각 종목에 "왜 주목해야 하는가" 한 줄 이유와 관련 뉴스 제목을 포함하세요.
+**2-7. 수급 동향 (flow_data):**
+```
+WebFetch: https://markets.hankyung.com/indices/kospi
+```
+→ 외국인/기관/개인 순매수 금액, 외국인 순매수 상위/하위 5종목
+→ 접근 불가 시 WebSearch: "코스피 외국인 순매수 오늘"로 보완
+→ 그래도 없으면 빈 객체({})
 
-15. AI 데일리 인사이트 작성 (daily_insight):
-    수집된 모든 데이터를 종합하여 핵심 3줄을 작성하세요:
-    ① 오늘의 가장 큰 시장 흐름 (한 문장)
-    ② 가장 중요한 변화 또는 리스크 (한 문장)
-    ③ 내일·이번주 주목할 점 (한 문장)
-    반드시 실제 수집 데이터에 근거해 작성하세요. 일반론 금지.
+**2-8. 이벤트 캘린더 (event_calendar):**
+```
+WebSearch: "이번주 FOMC CPI 한국금통위 실적발표 일정"
+WebSearch: "FOMC 날짜 2026 CPI 발표 일정"
+```
+→ 이번주~다음주 FOMC·CPI/PPI·고용지표·금통위·기업 실적발표 일정
+→ 접근 불가 시 빈 배열([])
 
-16. 한국·미국 섹터별 등락률 수집 (kr_sectors / us_sectors):
-    한국: https://markets.hankyung.com/index-info/industry 에서
-    반도체·자동차·금융·바이오·2차전지·게임·조선·건설·통신·철강 업종 등락률 수집.
-    미국: https://www.hankyung.com/globalmarket 또는
-    Yahoo Finance 섹터 ETF (XLK/XLF/XLE/XLV/XLY/XLI/XLB/XLP/XLRE/XLU) 등락률 수집.
-    접근 불가 시 빈 배열([])로 처리하세요.
+### 3단계: 종합 분석 작성
 
-12. 글로벌 거시 정세 뉴스 수집 (macro_headlines):
-    아래 두 URL에서 거시 뉴스를 최대 6개 수집하세요.
-    키워드 우선순위: 전쟁·제재·금리·유가·환율·지정학 리스크 순.
-    - https://www.hankyung.com/international  (국제 섹션)
-    - https://www.hankyung.com/economy        (경제 섹션)
-    각 뉴스에 대해 category(금리/지정학/에너지/환율/무역/기타)와
-    importance(high/medium/low)를 판단해 부여하세요.
-    접근 불가 시 빈 배열([])로 처리하세요.
+수집된 모든 데이터를 바탕으로 아래 세 항목을 직접 작성합니다:
 
-12. 종합 분석 작성:
-    수집된 한국·미국 시총 상위 기업 뉴스 전체를 종합하여,
-    현재 증시 흐름에서 이 기업들의 뉴스가 갖는 의미를 3~5문장으로 작성하세요.
-    (company_overall_summary 필드에 저장)
+**daily_insight** (3줄 — 반드시 수집한 실제 숫자 포함, 일반론 금지):
+① 오늘의 가장 큰 시장 흐름 (한 문장)
+② 가장 중요한 변화 또는 리스크 (한 문장)
+③ 내일·이번주 주목할 점 (한 문장)
+
+**company_overall_summary** (3~5문장):
+양국 시총 상위 기업 뉴스 흐름을 종합하여 현재 증시에 미치는 영향과 시사점.
+
+**watchlist** — 아래 기준으로 한국 5종목, 미국 5종목 선별:
+- 당일 5% 이상 급등락 (1단계 API 데이터 기반)
+- 외국인 대량 순매수 (2-7 flow_data 기반)
+- 거시 뉴스(금리·지정학)와 직접 연관
+- 실적 어닝 서프라이즈
+각 종목: "왜 주목해야 하는가" 한 줄 이유 + 관련 뉴스 제목 포함.
 
 ### 출력 형식
 
