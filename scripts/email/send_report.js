@@ -48,10 +48,12 @@ async function sendReport(pdfPath, docxPath) {
   }
 
   // 파일명에서 날짜 추출 (예: 증시 조사-20260427-0930.pdf)
-  const basename    = path.basename(pdfPath, '.pdf');
-  const dateMatch   = basename.match(/(\d{8}-\d{4})/);
-  const dateLabel   = dateMatch ? dateMatch[1].replace('-', ' ') : new Date().toLocaleDateString('ko-KR');
-  const subject     = `${config.subject_prefix} ${dateLabel}`;
+  // 발송 시각 기준 KST 날짜·시간 (환경 무관하게 항상 KST)
+  const _kst  = new Date(Date.now() + 9 * 3600 * 1000);
+  const _pad  = n => String(n).padStart(2, '0');
+  const dateLabel = `${_kst.getUTCFullYear()}-${_pad(_kst.getUTCMonth()+1)}-${_pad(_kst.getUTCDate())} `
+                  + `${_pad(_kst.getUTCHours())}:${_pad(_kst.getUTCMinutes())} KST`;
+  const subject = `${config.subject_prefix} ${dateLabel}`;
 
   // 첨부 파일 목록
   const attachments = [

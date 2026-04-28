@@ -67,11 +67,44 @@ try {
 
 // ── 데이터 로드 ──────────────────────────────────────────────────────────────
 const raw  = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-const now  = new Date();
+
+// ── 시장 세션 날짜 계산 (KST 기준) ───────────────────────────────────────────
+// KST = UTC+9. 스크립트는 어느 환경에서나 KST 기준으로 날짜를 계산합니다.
+const _nowUtcMs = Date.now();
+const _kstNow   = new Date(_nowUtcMs + 9 * 3600 * 1000); // UTC → KST
 const pad  = n => String(n).padStart(2, '0');
-const REPORT_DATE = raw.meta?.report_date || `${now.getFullYear()}년 ${pad(now.getMonth()+1)}월 ${pad(now.getDate())}일`;
-const REPORT_TIME = raw.meta?.report_time || `${pad(now.getHours())}${pad(now.getMinutes())}`;
-const BASE_DATE   = raw.base_date || raw.meta?.base_date || REPORT_DATE;
+const _kstH = _kstNow.getUTCHours();   // KST 현재 시
+const _kstM = _kstNow.getUTCMinutes(); // KST 현재 분
+
+// 날짜 포맷 헬퍼
+function _kstDateStr(d) {
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getUTCFullYear()}년 ${pad(d.getUTCMonth()+1)}월 ${pad(d.getUTCDate())}일(${days[d.getUTCDay()]})`;
+}
+function _addDays(d, n) {
+  return new Date(d.getTime() + n * 86400000);
+}
+
+// 한국 장: 09:00~15:30 KST
+// 15:30 이후 → 오늘 마감 세션 / 09:00 이전 → 전일 세션
+const _krToday   = new Date(_kstNow);
+_krToday.setUTCHours(0,0,0,0); // KST 자정
+const _krSession = (_kstH > 15 || (_kstH === 15 && _kstM >= 30)) ? _krToday
+                 : (_kstH < 9)                                     ? _addDays(_krToday, -1)
+                 : _krToday; // 장중
+
+// 미국 장: 09:30~16:00 ET = 23:30~06:00 KST(익일)
+// KST 06:00 이후 → 오늘 새벽에 마감된 미국 세션(= 어제 ET 날짜)
+// KST 06:00 이전 → 전날 새벽에 마감된 미국 세션(= 2일 전 ET 날짜)
+const _usSession = _kstH >= 6 ? _addDays(_krToday, -1) : _addDays(_krToday, -2);
+
+const KR_SESSION_DATE = _kstDateStr(_krSession); // 한국 장 기준일
+const US_SESSION_DATE = _kstDateStr(_usSession); // 미국 장 기준일 (ET 날짜)
+
+const now  = _kstNow; // 하위 코드 호환
+const REPORT_DATE = `${_krToday.getUTCFullYear()}년 ${pad(_krToday.getUTCMonth()+1)}월 ${pad(_krToday.getUTCDate())}일`;
+const REPORT_TIME = `${pad(_kstH)}${pad(_kstM)}`;
+const BASE_DATE   = KR_SESSION_DATE; // raw.base_date 무시 — 항상 실행시각 기준
 const SOURCES     = (raw.meta?.sources || ['한국경제신문(hankyung.com)', '매일경제 마켓(stock.mk.co.kr)']).join(' · ');
 const NAVER_OK    = raw.naver_verified === true;
 
@@ -1252,8 +1285,13 @@ function chartImage(imagePath) {
         children:[new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:64, font:'Arial', color:COLORS.primary })] }),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
         children:[new TextRun({ text:'Korea & US Stock Market Research Report', size:26, font:'Arial', color:COLORS.neutral })] }),
+      new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:20 },
+        children:[new TextRun({ text:`생성: ${REPORT_DATE} ${REPORT_TIME.slice(0,2)}:${REPORT_TIME.slice(2)} KST`, size:24, font:'Arial', color:COLORS.neutral, bold:true })] }),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
-        children:[new TextRun({ text:`${REPORT_DATE}  |  장마감 기준: ${BASE_DATE}`, size:24, font:'Arial', color:COLORS.neutral, bold:true })] }),
+        children:[
+          new TextRun({ text:`🇰🇷 한국 장: ${KR_SESSION_DATE}  `, size:20, font:'Arial', color:COLORS.neutral }),
+          new TextRun({ text:`🇺🇸 미국 장: ${US_SESSION_DATE}`, size:20, font:'Arial', color:COLORS.neutral }),
+        ] }),
       sp(120),
       // KPI 미니 카드 3개 (코스피 · S&P500 · USD/KRW)
       (() => {
