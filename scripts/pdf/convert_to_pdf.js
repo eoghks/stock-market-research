@@ -97,7 +97,13 @@ function convertToPdf(inputDocx, outputDir) {
   }
 
   // 4. 변환 실행
-  const cmd = `"${soffice}" --headless --convert-to pdf --outdir "${absOutputDir}" "${absInput}"`;
+  // --norestore: 이전 세션 복구 대화 방지
+  // EmbedStandardFonts=true: 폰트 임베딩 → 한글 깨짐 방지
+  const tmpProfile = path.join(require('os').tmpdir(), 'lo_stock_profile');
+  const cmd = `"${soffice}" --headless --norestore `
+    + `-env:UserInstallation=file:///${tmpProfile.replace(/\\/g,'/')} `
+    + `--convert-to "pdf:writer_pdf_Export:EmbedStandardFonts=true" `
+    + `--outdir "${absOutputDir}" "${absInput}"`;
   console.log(`[PDF 변환] 실행 중...`);
   console.log(`  입력: ${absInput}`);
   console.log(`  출력: ${absOutputDir}`);

@@ -101,6 +101,10 @@ const _usSession = _kstH >= 6 ? _addDays(_krToday, -1) : _addDays(_krToday, -2);
 const KR_SESSION_DATE = _kstDateStr(_krSession); // 한국 장 기준일
 const US_SESSION_DATE = _kstDateStr(_usSession); // 미국 장 기준일 (ET 날짜)
 
+// ── 폰트 상수 — 한글+영문 모두 지원하는 Malgun Gothic 사용 ─────────────────
+// Arial은 한글 글리프가 없어 LibreOffice PDF 변환 시 글자 깨짐 발생
+const FONT = 'Malgun Gothic';
+
 const now  = _kstNow; // 하위 코드 호환
 const REPORT_DATE = `${_krToday.getUTCFullYear()}년 ${pad(_krToday.getUTCMonth()+1)}월 ${pad(_krToday.getUTCDate())}일`;
 const REPORT_TIME = `${pad(_kstH)}${pad(_kstM)}`;
@@ -1248,10 +1252,10 @@ function chartImage(imagePath) {
     default: { document: { run: { font: 'Arial', size: 20 } } },
     paragraphStyles: [
       { id:'Heading1', name:'Heading 1', basedOn:'Normal', next:'Normal', quickFormat:true,
-        run:{ size:40, bold:true, font:'Arial', color:COLORS.primary },
+        run:{ size:40, bold:true, font:FONT, color:COLORS.primary },
         paragraph:{ spacing:{ before:480, after:200, line:360, lineRule:'auto' }, outlineLevel:0 } },
       { id:'Heading2', name:'Heading 2', basedOn:'Normal', next:'Normal', quickFormat:true,
-        run:{ size:30, bold:true, font:'Arial', color:COLORS.primary },
+        run:{ size:30, bold:true, font:FONT, color:COLORS.primary },
         paragraph:{ spacing:{ before:320, after:140, line:340, lineRule:'auto' }, outlineLevel:1 } },
     ]
   },
@@ -1265,8 +1269,8 @@ function chartImage(imagePath) {
     headers:{ default: new Header({ children:[new Paragraph({
       border:{ bottom:{ style:BorderStyle.SINGLE, size:6, color:'1F4E79', space:1 } },
       children:[
-        new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:18, font:'Arial', color:'1F4E79' }),
-        new TextRun({ text:`\t${REPORT_DATE} 기준`, size:18, font:'Arial', color:'595959' }),
+        new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:18, font:FONT, color:'1F4E79' }),
+        new TextRun({ text:`\t${REPORT_DATE} 기준`, size:18, font:FONT, color:'595959' }),
       ],
       tabStops:[{ type:'right', position:9360 }]
     })]})},
@@ -1274,23 +1278,23 @@ function chartImage(imagePath) {
       border:{ top:{ style:BorderStyle.SINGLE, size:6, color:'1F4E79', space:1 } },
       alignment:AlignmentType.CENTER,
       children:[
-        new TextRun({ text:`출처: ${SOURCES}   |   `, size:16, font:'Arial', color:'595959' }),
-        new TextRun({ text:'Page ', size:16, font:'Arial', color:'595959' }),
-        new TextRun({ children:[PageNumber.CURRENT], size:16, font:'Arial', color:'595959' }),
+        new TextRun({ text:`출처: ${SOURCES}   |   `, size:16, font:FONT, color:'595959' }),
+        new TextRun({ text:'Page ', size:16, font:FONT, color:'595959' }),
+        new TextRun({ children:[PageNumber.CURRENT], size:16, font:FONT, color:'595959' }),
       ]
     })]})},
     children:[
       // ── 표지 ──────────────────────────────────────────────────────────────
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:560, after:100 },
-        children:[new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:64, font:'Arial', color:COLORS.primary })] }),
+        children:[new TextRun({ text:'한국·미국 증시 조사 보고서', bold:true, size:64, font:FONT, color:COLORS.primary })] }),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
-        children:[new TextRun({ text:'Korea & US Stock Market Research Report', size:26, font:'Arial', color:COLORS.neutral })] }),
+        children:[new TextRun({ text:'Korea & US Stock Market Research Report', size:26, font:FONT, color:COLORS.neutral })] }),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:20 },
-        children:[new TextRun({ text:`생성: ${REPORT_DATE} ${REPORT_TIME.slice(0,2)}:${REPORT_TIME.slice(2)} KST`, size:24, font:'Arial', color:COLORS.neutral, bold:true })] }),
+        children:[new TextRun({ text:`생성: ${REPORT_DATE} ${REPORT_TIME.slice(0,2)}:${REPORT_TIME.slice(2)} KST`, size:24, font:FONT, color:COLORS.neutral, bold:true })] }),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
         children:[
-          new TextRun({ text:`🇰🇷 한국 장: ${KR_SESSION_DATE}  `, size:20, font:'Arial', color:COLORS.neutral }),
-          new TextRun({ text:`🇺🇸 미국 장: ${US_SESSION_DATE}`, size:20, font:'Arial', color:COLORS.neutral }),
+          new TextRun({ text:`🇰🇷 한국 장: ${KR_SESSION_DATE}  `, size:20, font:FONT, color:COLORS.neutral }),
+          new TextRun({ text:`🇺🇸 미국 장: ${US_SESSION_DATE}`, size:20, font:FONT, color:COLORS.neutral }),
         ] }),
       sp(120),
       // KPI 미니 카드 3개 (코스피 · S&P500 · USD/KRW)
@@ -1308,9 +1312,9 @@ function chartImage(imagePath) {
             shading:{ fill:COLORS.cover_kpi, type:ShadingType.CLEAR },
             margins:{ top:160, bottom:160, left:200, right:200 },
             children:[
-              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:40}, children:[new TextRun({text:label, size:18, font:'Arial', color:COLORS.neutral})] }),
-              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:40}, children:[new TextRun({text:val||'-', size:28, font:'Arial', color:COLORS.primary, bold:true})] }),
-              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:0},  children:[new TextRun({text:chg||'', size:20, font:'Arial', color:chgColor, bold:true})] }),
+              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:40}, children:[new TextRun({text:label, size:18, font:FONT, color:COLORS.neutral})] }),
+              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:40}, children:[new TextRun({text:val||'-', size:28, font:FONT, color:COLORS.primary, bold:true})] }),
+              new Paragraph({ alignment:AlignmentType.CENTER, spacing:{before:0,after:0},  children:[new TextRun({text:chg||'', size:20, font:FONT, color:chgColor, bold:true})] }),
             ]
           });
         }
@@ -1326,9 +1330,9 @@ function chartImage(imagePath) {
       sp(200),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:60 },
         children:[new TextRun({ text:NAVER_OK ? '✅ 네이버 금융 MCP 교차 검증 완료' : '📡 한국경제신문 크롤링 데이터 기준',
-          size:18, font:'Arial', color: NAVER_OK?'2E7D32':'2E75B6', italics:true })] }),
+          size:18, font:FONT, color: NAVER_OK?'2E7D32':'2E75B6', italics:true })] }),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:0, after:300 },
-        children:[new TextRun({ text:`출처: ${SOURCES}`, size:18, font:'Arial', color:'7F7F7F' })] }),
+        children:[new TextRun({ text:`출처: ${SOURCES}`, size:18, font:FONT, color:'7F7F7F' })] }),
       divider(),
 
       // ── 목차 ──────────────────────────────────────────────────────────────
@@ -1644,7 +1648,7 @@ function chartImage(imagePath) {
       divider(),
       new Paragraph({ alignment:AlignmentType.CENTER, spacing:{ before:200, after:0 },
         children:[new TextRun({ text:'※ 본 보고서는 투자 참고 목적의 정보 제공이며, 투자 결과에 대한 책임은 이용자 본인에게 있습니다.',
-          size:16, font:'Arial', color:'7F7F7F' })] }),
+          size:16, font:FONT, color:'7F7F7F' })] }),
     ]
   }]
 });
@@ -1694,7 +1698,28 @@ function chartImage(imagePath) {
         console.warn('⚠️  파일 삭제 실패 (발송은 완료됨):', delErr.message);
       }
     } catch (mailErr) {
-      console.warn('⚠️  이메일 발송 실패 — 로컬 파일은 유지됩니다:', mailErr.message);
+      console.warn('⚠️  nodemailer 발송 실패 (SMTP 차단 환경?):', mailErr.message);
+
+      // ── PowerShell fallback (Cowork·샌드박스 환경 대응) ─────────────
+      const psScript = 'C:/Users/zhfld/OneDrive/바탕 화면/ai/stock/send_report_email.ps1';
+      if (fs.existsSync(psScript) && generatedPdfPath) {
+        console.log('📨 PowerShell 이메일 스크립트로 재시도...');
+        const { execSync: _exec } = require('child_process');
+        try {
+          _exec(
+            `powershell -ExecutionPolicy Bypass -File "${psScript}" `
+            + `-PdfPath "${generatedPdfPath}" -DocxPath "${outputPath}"`,
+            { stdio: 'inherit', timeout: 30000 }
+          );
+          // PS 발송 성공 → 파일 삭제
+          [generatedPdfPath, outputPath].forEach(f => {
+            if (fs.existsSync(f)) { fs.unlinkSync(f); console.log(`🗑️  삭제: ${path.basename(f)}`); }
+          });
+        } catch (psErr) {
+          console.warn('⚠️  PowerShell 발송도 실패 — 파일 유지:', psErr.message);
+        }
+      }
+      // ─────────────────────────────────────────────────────────────
     }
   } else if (fs.existsSync(emailConfigPath) && !generatedPdfPath) {
     console.log('ℹ️  PDF 없음 — 이메일 발송 건너뜀 (LibreOffice 설치 필요).');
