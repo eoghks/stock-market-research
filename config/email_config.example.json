@@ -1,21 +1,19 @@
 {
-  "_comment": "이 파일을 email_config.json 으로 복사한 뒤 실제 SMTP 정보로 수정하세요. email_config.json 은 .gitignore 처리되어 커밋되지 않습니다.",
-  "smtp": {
-    "host": "smtp.naver.com",
-    "port": 465,
-    "secure": true,
-    "auth": {
-      "user": "your_id@naver.com",
-      "pass": "앱비밀번호_16자리"
-    }
+  "_comment": "이 파일을 email_config.json 으로 복사한 뒤 실제 정보로 수정하세요. email_config.json 은 .gitignore 처리되어 커밋되지 않습니다.",
+  "provider": "sendgrid",
+  "sendgrid": {
+    "api_key": "SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   },
-  "from": "your_id@naver.com",
-  "to": "받을주소@naver.com",
+  "from": "your_verified_sender@gmail.com",
+  "to": "recipient@example.com",
   "subject_prefix": "[증시 보고서]",
-  "_smtp_presets": {
-    "naver":  { "host": "smtp.naver.com",  "port": 465, "secure": true  },
-    "gmail":  { "host": "smtp.gmail.com",  "port": 465, "secure": true  },
-    "kakao":  { "host": "smtp.kakao.com",  "port": 465, "secure": true  },
-    "daum":   { "host": "smtp.daum.net",   "port": 465, "secure": true  }
+  "_providers": {
+    "sendgrid": "SendGrid API Key 방식 (권장) — https://app.sendgrid.com/settings/api_keys",
+    "smtp": "SMTP 방식 (레거시) — provider를 smtp로 바꾸고 아래 smtp 블록 사용",
+    "smtp_presets": {
+      "naver":  { "host": "smtp.naver.com",  "port": 465, "secure": true },
+      "gmail":  { "host": "smtp.gmail.com",  "port": 465, "secure": true },
+      "kakao":  { "host": "smtp.kakao.com",  "port": 465, "secure": true }
+    }
   }
 }
