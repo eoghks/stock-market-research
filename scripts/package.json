@@ -1,13 +1,13 @@
 {
   "name": "stock-market-research-scripts",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "한국·미국 증시 조사 보고서 생성 스크립트",
   "main": "generate_report.js",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "chart.js": "^4.5.1",
     "chartjs-node-canvas": "^5.0.0",
-    "docx": "^9.6.1",
-    "nodemailer": "^8.0.6"
+    "docx": "^9.6.1"
   },
   "engines": {
     "node": ">=18"
