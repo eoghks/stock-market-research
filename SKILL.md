@@ -521,6 +521,23 @@ node "${SKILL_DIR}/scripts/generate_report.js" \
 
 ---
 
+## Step 3.5: 이메일 발송 (환경별)
+
+보고서 생성 후 `scripts/email/send_report.js`가 PDF+DOCX를 이메일로 발송합니다.
+
+| 환경 | 이메일 발송 | 이유 |
+|---|---|---|
+| **로컬 Windows** | ✅ 자동 발송 | SendGrid HTTPS API 사용 가능 |
+| **Cowork** | ❌ skip | 샌드박스 외부 인터넷 완전 차단 (DNS 불가) |
+
+**Cowork에서 이메일이 필요한 경우** → 로컬 Windows에서 작업 스케줄러 자동화를 사용하세요:
+```
+scripts/setup_scheduler.ps1 실행 → 매일 18:30 KST 자동 실행 + 이메일 발송
+```
+설치 가이드: `docs/usage/scheduler-setup.md`
+
+---
+
 ## Step 4: 카카오톡 발송 (선택)
 
 사용자가 카카오톡 발송을 원하거나 KakaoTalk MCP가 활성화된 경우,

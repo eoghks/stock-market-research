@@ -2,7 +2,7 @@
 
 > 한국·미국 증시를 자동 조사하고 **상세 Word·PDF 보고서**를 생성하는 Claude Code 플러그인
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.4.2-blue)
 ![Node](https://img.shields.io/badge/Node.js-18%2B-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 ![SemVer](https://img.shields.io/badge/versioning-SemVer%202.0-orange)
@@ -26,6 +26,8 @@
 | 📄 PDF 출력 | LibreOffice headless로 DOCX와 PDF 동시 생성 |
 | 📖 용어 사전 | 신규 등장 용어 자동 감지·누적 등록 (중복 방지) |
 | 💬 카카오톡 발송 | KakaoTalk MCP 연동 시 9개 요약 메시지 자동 발송 |
+| 📧 이메일 발송 | SendGrid API로 PDF+DOCX 첨부 자동 발송 (로컬 전용) |
+| ⏰ 자동 실행 | Windows 작업 스케줄러로 매일 정해진 시각 무인 실행 |
 
 ---
 
@@ -48,7 +50,23 @@ cd stock-market-research/scripts
 npm install
 ```
 
-### 3. 실행
+### 3. 이메일 설정 (선택)
+
+`config/email_config.json` 생성 (`config/email_config.example.json` 참고):
+
+```json
+{
+  "provider": "sendgrid",
+  "sendgrid": { "api_key": "SG.xxxx..." },
+  "from": "sender@gmail.com",
+  "to": "recipient@naver.com",
+  "subject_prefix": "[증시 보고서]"
+}
+```
+
+> ⚠️ `email_config.json`은 `.gitignore` 등록 — 절대 커밋하지 마세요.
+
+### 4. 실행
 
 Claude Code 채팅창에서:
 
@@ -59,6 +77,19 @@ Claude Code 채팅창에서:
 ```
 
 보고서는 `~/Documents/` 또는 `/sessions/` 경로에 `증시 조사-YYYYMMDD-HHMM.docx` 형식으로 저장됩니다.
+
+### 5. 자동 실행 설정 (Windows 로컬 전용)
+
+매일 정해진 시각에 자동 실행하려면:
+
+```powershell
+cd scripts
+& ".\setup_scheduler.ps1"   # 1회만 실행
+```
+
+→ 매일 **18:30 KST** 자동 실행. 자세한 내용: [docs/usage/scheduler-setup.md](docs/usage/scheduler-setup.md)
+
+> **Cowork 환경:** 외부 인터넷이 차단되어 이메일 발송 불가. 카카오톡으로만 알림 수신. 이메일이 필요하면 로컬 자동 실행을 사용하세요.
 
 ---
 
@@ -83,6 +114,10 @@ stock-market-research/
 ├── README.md                   # 이 파일
 ├── scripts/
 │   ├── generate_report.js      # 보고서 생성 메인 스크립트
+│   ├── run_daily_report.ps1    # 자동 실행 래퍼 (스케줄러 호출용)
+│   ├── setup_scheduler.ps1     # Windows 작업 스케줄러 등록 (1회 실행)
+│   ├── email/
+│   │   └── send_report.js      # SendGrid API 이메일 발송
 │   ├── charts/
 │   │   ├── fetch_timeseries.js # 시계열 데이터 추출
 │   │   ├── render_chart.js     # 라인차트 PNG 생성
