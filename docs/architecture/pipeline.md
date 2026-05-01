@@ -102,6 +102,17 @@ node scripts/generate_report.js <data.json> <output.docx> [node_modules_dir]
 
 ---
 
+## Step 3.5 — 이메일 발송 (환경별)
+
+| 환경 | 이메일 | 비고 |
+|---|---|---|
+| **로컬 Windows** | ✅ SendGrid API | `config/email_config.json` 설정 필요 |
+| **Cowork** | ❌ | 외부 인터넷 완전 차단 — 카카오톡으로 대체 |
+
+로컬 자동화: [scheduler-setup.md](../usage/scheduler-setup.md)
+
+---
+
 ## Step 4 — 카카오톡 발송
 
 KakaoTalk MCP 활성화 시 자동 실행. 8개 메시지 순차 발송:
