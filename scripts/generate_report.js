@@ -1676,53 +1676,36 @@ function chartImage(imagePath) {
   }
   // ─────────────────────────────────────────────────────────────────
 
-  // ── 이메일 발송 + 파일 정리 (config/email_config.json 있을 때만) ──
+  // ── 이메일 발송 + 파일 정리 ───────────────────────────────────────
+  // 발송 조건 (3가지 모두 충족 시):
+  //   ① config/email_config.json 존재 (SendGrid API 키 설정됨)
+  //   ② PDF 생성 완료 (LibreOffice 변환 성공)
+  //   ③ Windows 환경 — Cowork(Linux) 샌드박스는 외부 인터넷 완전 차단이므로 skip
   const emailConfigPath = path.join(__dirname, '..', 'config', 'email_config.json');
-  if (fs.existsSync(emailConfigPath) && generatedPdfPath) {
+  const isWindows       = process.platform === 'win32';
+
+  if (!fs.existsSync(emailConfigPath)) {
+    console.log('ℹ️  이메일 설정 없음 — 건너뜀 (config/email_config.json 참고).');
+  } else if (!generatedPdfPath) {
+    console.log('ℹ️  PDF 없음 — 이메일 건너뜀 (LibreOffice 설치 필요).');
+  } else if (!isWindows) {
+    console.log('ℹ️  Cowork/Linux 환경 — 외부 인터넷 차단으로 이메일 skip. 카카오톡으로 요약 발송됩니다.');
+  } else {
+    // Windows 로컬 환경 → SendGrid API로 발송
     try {
       const { sendReport } = require(path.join(__dirname, 'email', 'send_report.js'));
       const result = await sendReport(generatedPdfPath, outputPath);
       console.log(`📧 이메일 발송 완료 → ${result.to} | 제목: ${result.subject}`);
-
-      // 발송 성공 후 로컬 파일 삭제 (이미 메일로 받았으므로)
-      try {
-        if (fs.existsSync(generatedPdfPath)) {
-          fs.unlinkSync(generatedPdfPath);
-          console.log(`🗑️  PDF 삭제: ${path.basename(generatedPdfPath)}`);
-        }
-        if (fs.existsSync(outputPath)) {
-          fs.unlinkSync(outputPath);
-          console.log(`🗑️  DOCX 삭제: ${path.basename(outputPath)}`);
-        }
-      } catch (delErr) {
-        console.warn('⚠️  파일 삭제 실패 (발송은 완료됨):', delErr.message);
-      }
-    } catch (mailErr) {
-      console.warn('⚠️  nodemailer 발송 실패 (SMTP 차단 환경?):', mailErr.message);
-
-      // ── PowerShell fallback (Cowork·샌드박스 환경 대응) ─────────────
-      const psScript = 'C:/Users/zhfld/OneDrive/바탕 화면/ai/stock/send_report_email.ps1';
-      if (fs.existsSync(psScript) && generatedPdfPath) {
-        console.log('📨 PowerShell 이메일 스크립트로 재시도...');
-        const { execSync: _exec } = require('child_process');
+      // 발송 성공 후 로컬 파일 삭제 (이메일로 전달됐으므로)
+      [generatedPdfPath, outputPath].forEach(f => {
         try {
-          _exec(
-            `powershell -ExecutionPolicy Bypass -File "${psScript}" `
-            + `-PdfPath "${generatedPdfPath}" -DocxPath "${outputPath}"`,
-            { stdio: 'inherit', timeout: 30000 }
-          );
-          // PS 발송 성공 → 파일 삭제
-          [generatedPdfPath, outputPath].forEach(f => {
-            if (fs.existsSync(f)) { fs.unlinkSync(f); console.log(`🗑️  삭제: ${path.basename(f)}`); }
-          });
-        } catch (psErr) {
-          console.warn('⚠️  PowerShell 발송도 실패 — 파일 유지:', psErr.message);
-        }
-      }
-      // ─────────────────────────────────────────────────────────────
+          if (fs.existsSync(f)) { fs.unlinkSync(f); console.log(`🗑️  삭제: ${path.basename(f)}`); }
+        } catch (e) { console.warn('⚠️  파일 삭제 실패 (발송은 완료됨):', e.message); }
+      });
+    } catch (mailErr) {
+      console.warn('⚠️  SendGrid 발송 실패 — 파일 유지:', mailErr.message);
+      if (mailErr.response) console.warn('   오류 상세:', JSON.stringify(mailErr.response.body));
     }
-  } else if (fs.existsSync(emailConfigPath) && !generatedPdfPath) {
-    console.log('ℹ️  PDF 없음 — 이메일 발송 건너뜀 (LibreOffice 설치 필요).');
   }
   // ─────────────────────────────────────────────────────────────────
 

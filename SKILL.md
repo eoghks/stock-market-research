@@ -523,18 +523,32 @@ node "${SKILL_DIR}/scripts/generate_report.js" \
 
 ## Step 3.5: 이메일 발송 (환경별)
 
-보고서 생성 후 `scripts/email/send_report.js`가 PDF+DOCX를 이메일로 발송합니다.
+보고서 생성 후 이메일 발송 여부는 **실행 환경에 따라 자동으로 결정**됩니다.
+`generate_report.js`가 `process.platform`을 확인해 아래 세 가지 중 하나로 동작합니다:
 
-| 환경 | 이메일 발송 | 이유 |
+| 시나리오 | 이메일 발송 | 동작 방식 |
 |---|---|---|
-| **로컬 Windows** | ✅ 자동 발송 | SendGrid HTTPS API 사용 가능 |
-| **Cowork** | ❌ skip | 샌드박스 외부 인터넷 완전 차단 (DNS 불가) |
+| **Cowork (skill 호출)** | ❌ skip | Linux 환경 감지 — 외부 인터넷 차단으로 자동 skip. 카카오톡(Step 4)으로 요약 수신 |
+| **로컬 Windows 직접 실행** | ✅ 자동 발송 | `config/email_config.json` 있으면 SendGrid API로 PDF 첨부 발송 |
+| **Windows 작업 스케줄러** | ✅ 자동 발송 | `scripts/run_daily_report.ps1` → `claude -p` → 매일 19:30 KST 무인 실행 |
 
-**Cowork에서 이메일이 필요한 경우** → 로컬 Windows에서 작업 스케줄러 자동화를 사용하세요:
+**이메일 설정 파일** (`config/email_config.json`, gitignore 적용):
+```json
+{
+  "provider": "sendgrid",
+  "sendgrid": { "api_key": "SG.xxxx..." },
+  "from": "sender@gmail.com",
+  "to": "recipient@naver.com",
+  "subject_prefix": "[증시 보고서]"
+}
 ```
-scripts/setup_scheduler.ps1 실행 → 매일 18:30 KST 자동 실행 + 이메일 발송
-```
-설치 가이드: `docs/usage/scheduler-setup.md`
+
+- 파일 없으면 조용히 skip (에러 없음)
+- PDF 없으면 (LibreOffice 미설치) skip
+- 발송 성공 시 DOCX·PDF 파일 자동 삭제
+
+스케줄러 설치: `scripts/setup_scheduler.ps1` (1회 실행)  
+상세 가이드: `docs/usage/email-setup.md`, `docs/usage/scheduler-setup.md`
 
 ---
 

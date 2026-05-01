@@ -2,7 +2,7 @@
 
 > 한국·미국 증시를 자동 조사하고 **상세 Word·PDF 보고서**를 생성하는 Claude Code 플러그인
 
-![Version](https://img.shields.io/badge/version-2.4.2-blue)
+![Version](https://img.shields.io/badge/version-2.4.3-blue)
 ![Node](https://img.shields.io/badge/Node.js-18%2B-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 ![SemVer](https://img.shields.io/badge/versioning-SemVer%202.0-orange)
@@ -52,7 +52,15 @@ npm install
 
 ### 3. 이메일 설정 (선택)
 
-`config/email_config.json` 생성 (`config/email_config.example.json` 참고):
+이메일 발송 방식은 실행 환경에 따라 자동으로 결정됩니다:
+
+| 시나리오 | 이메일 | 동작 |
+|---|---|---|
+| **Cowork (skill 호출)** | ❌ skip | 외부 인터넷 완전 차단 — 카카오톡으로 대체 |
+| **로컬 Windows 직접 실행** | ✅ 자동 발송 | SendGrid API로 PDF 첨부 발송 |
+| **Windows 작업 스케줄러 자동 실행** | ✅ 자동 발송 | 매일 19:30 KST 무인 실행 + 이메일 |
+
+로컬/스케줄러 이메일 발송을 사용하려면 `config/email_config.json` 생성 (`config/email_config.example.json` 참고):
 
 ```json
 {
@@ -65,6 +73,8 @@ npm install
 ```
 
 > ⚠️ `email_config.json`은 `.gitignore` 등록 — 절대 커밋하지 마세요.
+
+자세한 설정 가이드: [docs/usage/email-setup.md](docs/usage/email-setup.md)
 
 ### 4. 실행
 
@@ -87,7 +97,7 @@ cd scripts
 & ".\setup_scheduler.ps1"   # 1회만 실행
 ```
 
-→ 매일 **18:30 KST** 자동 실행. 자세한 내용: [docs/usage/scheduler-setup.md](docs/usage/scheduler-setup.md)
+→ 매일 **19:30 KST** 자동 실행. 자세한 내용: [docs/usage/scheduler-setup.md](docs/usage/scheduler-setup.md)
 
 > **Cowork 환경:** 외부 인터넷이 차단되어 이메일 발송 불가. 카카오톡으로만 알림 수신. 이메일이 필요하면 로컬 자동 실행을 사용하세요.
 
@@ -188,7 +198,9 @@ stock-market-research/
 - [보고서 섹션 구조](docs/architecture/report-sections.md)
 - [버전 관리 정책 (SemVer)](docs/architecture/versioning.md)
 - [빠른 시작](docs/usage/getting-started.md)
+- [이메일 설정](docs/usage/email-setup.md)
 - [PDF 설정](docs/usage/pdf-setup.md)
+- [스케줄러 설정](docs/usage/scheduler-setup.md)
 - [문제 해결](docs/usage/troubleshooting.md)
 - [변경 이력](docs/changelog/)
 - [용어 사전](docs/glossary/glossary.md)
