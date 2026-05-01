@@ -17,7 +17,7 @@ Cowork 샌드박스는 DNS 조회 자체가 불가하여 어떤 방식으로도 
 1. **Claude Code** 설치 및 `claude` 명령이 PATH에 등록되어 있을 것
 2. **`config/email_config.json`** 설정 완료 (SendGrid API 키 포함)
 3. **LibreOffice** 설치 (PDF 변환용)
-4. PC가 매일 18:30 KST 전후로 켜져 있을 것 (꺼져 있어도 `StartWhenAvailable`로 나중에 자동 실행)
+4. PC가 매일 19:30 KST 전후로 켜져 있을 것 (꺼져 있어도 `StartWhenAvailable`로 나중에 자동 실행)
 
 ## 설치 (1회만)
 
@@ -26,7 +26,7 @@ cd "C:\Users\zhfld\OneDrive\바탕 화면\ai\claude\stock-market-research\script
 & ".\setup_scheduler.ps1"
 ```
 
-완료 후 매일 **18:30 KST** 자동 실행됩니다.
+완료 후 매일 **19:30 KST** 자동 실행됩니다.
 
 ## 실행 시각 변경
 
@@ -59,7 +59,7 @@ Unregister-ScheduledTask -TaskName "증시보고서_자동생성" -Confirm:$fals
 ## 파이프라인 흐름
 
 ```
-Windows 작업 스케줄러 (18:30 KST)
+Windows 작업 스케줄러 (19:30 KST)
   └─▶ run_daily_report.ps1
         └─▶ claude -p "오늘 증시 조사해줘"
               ├─▶ 서브에이전트 A: Yahoo Finance API + WebFetch (데이터 수집)

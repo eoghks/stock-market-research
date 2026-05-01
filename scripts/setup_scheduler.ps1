@@ -17,7 +17,7 @@
 
 $TaskName   = "증시보고서_자동생성"
 $ScriptPath = "C:\Users\zhfld\OneDrive\바탕 화면\ai\claude\stock-market-research\scripts\run_daily_report.ps1"
-$RunAt      = "18:30"   # KST 18:30 — 한국 장 마감(15:30) 후 3시간, 미국 장 개장 전
+$RunAt      = "19:30"   # KST 19:30 — 한국 장 마감(15:30) 후 4시간, 미국 장 개장 전
 
 # 스크립트 존재 확인
 if (-not (Test-Path $ScriptPath)) {
